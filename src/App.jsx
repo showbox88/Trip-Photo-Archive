@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 import { 
   FolderOpen, Settings, ListFilter, Play, LayoutGrid, AlignJustify, 
   SlidersHorizontal, ArrowUpDown, Search, Plane, Plus, Trash2, 
@@ -60,10 +60,12 @@ function App() {
   // Merge scan results (handles) with DB metadata
   const enrichedPhotos = useMemo(() => {
     return photoFiles.map(file => {
-      const record = dbPhotoMap.get(file.path) || {};
-      return { ...file, ...record };
+      // 统一路径规范化 (处理 Windows \ 与 / 的差异)
+      const normalizedPath = file.path.replace(/\\/g, '/');
+      const record = (dbContent.photos || []).find(p => p.file_name.replace(/\\/g, '/') === normalizedPath) || {};
+      return { ...file, ...record, path: normalizedPath };
     });
-  }, [photoFiles, dbPhotoMap]);
+  }, [photoFiles, dbContent.photos]);
 
   const [appMode, setAppMode] = useState('home');
   const [activeFilter, setActiveFilter] = useState({ type: 'all' });
@@ -78,6 +80,8 @@ function App() {
   const [lightboxPhotos, setLightboxPhotos] = useState([]);
   const [lightboxInitialIndex, setLightboxInitialIndex] = useState(0);
   const [viewMode, setViewMode] = useState('gallery'); // 'gallery' | 'table'
+  const [lastSelectedIndex, setLastSelectedIndex] = useState(null);
+  const [animatingTargetId, setAnimatingTargetId] = useState(null);
 
   useEffect(() => {
     checkPersistedWorkspace();
@@ -131,27 +135,45 @@ function App() {
   // Deprecated: keeping for compatibility with existing components for a moment
   const handleUpdateTrip = (id, updates) => handleUpdateItem(id, updates, 'trip');
 
-  const toggleSelection = (id, isBulk = false) => {
+  const toggleSelection = (id, indexOrBulk, event) => {
     setSelectedIds(prev => {
-      const next = new Set(prev);
-      if (isBulk) {
-        // id is a Set or Array in bulk mode
+      // Handle bulk update (like clearing or rectangle selection)
+      if (indexOrBulk === true) {
         return new Set(id);
       }
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+
+      const next = new Set(prev);
+      const index = typeof indexOrBulk === 'number' ? indexOrBulk : undefined;
+      
+      // Handle Shift-Click for range selection
+      if (event?.shiftKey && lastSelectedIndex !== null && index !== undefined) {
+        const start = Math.min(lastSelectedIndex, index);
+        const end = Math.max(lastSelectedIndex, index);
+        
+        // Items between start and end inclusive
+        const rangeItems = displayedItems.slice(start, end + 1);
+        rangeItems.forEach(item => {
+          const itemId = item.type === 'photo' ? item.path : `${item.type}:${item.id}`;
+          next.add(itemId);
+        });
+      } else {
+        // Normal click
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+        
+        if (index !== undefined) {
+          setLastSelectedIndex(index);
+        }
+      }
+      
       return next;
     });
   };
 
   const onMenuAction = (actionId, targetItem, extraData) => {
     if (actionId === 'create-event') {
-      const targetId = targetItem.type === 'photo' ? targetItem.path : `event:${targetItem.id}`;
-      const classifyTargets = selectedIds.has(targetId)
-        ? enrichedPhotos.filter(p => selectedIds.has(p.path))
-        : [targetItem];
-
-      setActivePhotos(classifyTargets);
+      const targets = enrichedPhotos.filter(p => selectedIds.has(p.path));
+      setActivePhotos(targets.length > 0 ? targets : [targetItem]);
       setIsEventModalOpen(true);
     } else if (actionId === 'create-trip') {
       setIsTripModalOpen(true);
@@ -196,11 +218,12 @@ function App() {
     };
 
     const updatedPhotos = dbContent.photos.map(p => {
-        if (eventData.photoIds.includes(p.file_name)) {
+        const pNormalized = p.file_name.replace(/\\/g, '/');
+        if (eventData.photoIds.some(id => id.replace(/\\/g, '/') === pNormalized)) {
             return { 
               ...p, 
               event_id: newEventId, 
-              trip_id: eventData.tripId || p.trip_id // Sync trip_id to photo if event has it
+              trip_id: eventData.tripId || p.trip_id
             };
         }
         return p;
@@ -267,7 +290,8 @@ function App() {
     });
 
     const updatedPhotos = dbContent.photos.map(p => {
-      if (photoPathsToLink.includes(p.file_name)) {
+      const pNormalized = p.file_name.replace(/\\/g, '/');
+      if (photoPathsToLink.some(path => path.replace(/\\/g, '/') === pNormalized)) {
           return { ...p, trip_id: newTripId };
       }
       return p;
@@ -285,6 +309,7 @@ function App() {
   };
 
   const handleAssignToTrip = async (tripId, eventIds) => {
+    setAnimatingTargetId(`trip:${tripId}`);
     const updatedEvents = dbContent.events.map(e => {
         if (eventIds.includes(e.event_id)) {
             return { ...e, trip_id: tripId };
@@ -297,12 +322,15 @@ function App() {
         events: updatedEvents
     });
     setSelectedIds(new Set());
+    setTimeout(() => setAnimatingTargetId(null), 1000);
     showToast(`成功将事件归类到行程`, 'trip');
   };
 
   const handleAssignToEvent = async (eventId, photoPaths) => {
+    setAnimatingTargetId(`event:${eventId}`);
     const updatedPhotos = dbContent.photos.map(p => {
-        if (photoPaths.includes(p.file_name)) {
+        const pNormalized = p.file_name.replace(/\\/g, '/');
+        if (photoPaths.some(path => path.replace(/\\/g, '/') === pNormalized)) {
             return { ...p, event_id: eventId };
         }
         return p;
@@ -313,6 +341,7 @@ function App() {
         photos: updatedPhotos
     });
     setSelectedIds(new Set());
+    setTimeout(() => setAnimatingTargetId(null), 1000);
     const event = dbContent.events.find(e => e.event_id === eventId);
     showToast(`成功将照片添加到事件 "${event?.title || '未知事件'}"`, 'orange');
   };
@@ -558,6 +587,7 @@ function App() {
             transition={{ duration: 0.8 }}
             className="fixed inset-0 z-20 flex flex-col bg-black/40 backdrop-blur-3xl"
           >
+            <LayoutGroup id="main-archive-layout">
             {/* ── Design-Specific Top Header ── */}
             <header className="w-full h-20 shrink-0 bg-[#0b1014] border-b border-white/5 flex items-center justify-between px-10 z-[100]">
               <div className="flex items-center gap-12">
@@ -657,6 +687,7 @@ function App() {
                   onToggleSelection={toggleSelection}
                   onNavigate={handleNavigate}
                   onUpdateItem={handleUpdateItem}
+                  animatingTargetId={animatingTargetId}
                 />
 
                 <ActionBar 
@@ -691,7 +722,7 @@ function App() {
               trips={dbContent.trips}
               events={dbContent.events.filter(e => !e.trip_id)}
               initialSelectedIds={Array.from(selectedIds)
-                .filter(id => id.startsWith('event:'))
+                .filter(id => typeof id === 'string' && id.startsWith('event:'))
                 .map(id => id.replace('event:', ''))}
               onCreate={handleCreateTrip}
               onAssign={handleAssignToTrip}
@@ -741,6 +772,7 @@ function App() {
               )}
             </AnimatePresence>
 
+            </LayoutGroup>
           </motion.div>
         )}
       </AnimatePresence>

@@ -1,10 +1,10 @@
 import { useRef, useState, useEffect, useMemo } from 'react';
 import { PhotoCard } from './PhotoCard';
 import { CollectionCard } from './CollectionCard';
-import { motion, LayoutGroup, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Plus as PlusIcon } from 'lucide-react';
 
-export function VirtualGrid({ items, onContextMenu, selectedIds, onToggleSelection, onNavigate, onUpdateItem, onUpdateTrip }) {
+export function VirtualGrid({ items, onContextMenu, selectedIds, onToggleSelection, onNavigate, onUpdateItem, onUpdateTrip, animatingTargetId }) {
   const parentRef = useRef(null);
   const gridRef = useRef(null);
   
@@ -41,23 +41,14 @@ export function VirtualGrid({ items, onContextMenu, selectedIds, onToggleSelecti
       }
     });
 
-    // Update state via bulk toggle if needed (here we assume onToggleSelection can take an array or Set, 
-    // but since the prop is typically a single toggle, we'll need to adjust App.jsx or use a bulk function)
-    // For now, let's assume we need to call it once for each if we don't have a bulk setter.
-    // IMPROVEMENT: We will add a bulk selection handler to App.jsx next.
     if (onToggleSelection) {
-      // If we don't have a bulk function, this might be slow, but let's try calling it.
-      // Better: we'll call onToggleSelection with a special 'bulk' signature if supported, 
-      // or just ensure we update the set and pass it back.
       onToggleSelection(newlySelected, true); 
     }
   };
 
   const onMouseDown = (e) => {
-    // Only left click and not on a button/interactive element
     if (e.button !== 0 || e.target.closest('button') || e.target.closest('input')) return;
     
-    const rect = parentRef.current.getBoundingClientRect();
     setDragStart({ x: e.clientX, y: e.clientY });
     setDragCurrent({ x: e.clientX, y: e.clientY });
     setIsDragging(false);
@@ -68,7 +59,7 @@ export function VirtualGrid({ items, onContextMenu, selectedIds, onToggleSelecti
     if (!dragStart) return;
     
     const dist = Math.sqrt(Math.pow(e.clientX - dragStart.x, 2) + Math.pow(e.clientY - dragStart.y, 2));
-    if (dist > 5) { // Threshold to prevent accidental drags
+    if (dist > 5) {
       setIsDragging(true);
       setDragCurrent({ x: e.clientX, y: e.clientY });
       dragWasActive.current = true;
@@ -111,13 +102,11 @@ export function VirtualGrid({ items, onContextMenu, selectedIds, onToggleSelecti
     };
   }, [dragStart, dragCurrent, isDragging]);
 
-  // Paging Logic
-  const PAGE_SIZE = 21; // 3 rows of 7
+  const PAGE_SIZE = 21;
   const [displayLimit, setDisplayLimit] = useState(PAGE_SIZE);
   const sentinelRef = useRef(null);
 
   useEffect(() => {
-    // Reset limit when items change (e.g. changing filter or navigating)
     setDisplayLimit(PAGE_SIZE);
   }, [items]);
 
@@ -153,8 +142,7 @@ export function VirtualGrid({ items, onContextMenu, selectedIds, onToggleSelecti
         ref={gridRef}
         className="w-full grid gap-12 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 3xl:grid-cols-7"
       >
-        <LayoutGroup id="grid-layout">
-          {visibleItems.map((item, i) => {
+        {visibleItems.map((item, i) => {
             const itemKey = item.type === 'photo' ? item.path : `${item.type}:${item.id}`;
             const isSelected = selectedIds.has(itemKey);
 
@@ -167,8 +155,9 @@ export function VirtualGrid({ items, onContextMenu, selectedIds, onToggleSelecti
                   isSelected={isSelected}
                   onToggleSelection={onToggleSelection}
                   onNavigate={onNavigate}
-                  onUpdate={onUpdateItem || onUpdateTrip}
+                  onUpdate={updateHandler}
                   fileInfo={item}
+                  animatingTargetId={animatingTargetId}
                 />
               );
             }
@@ -183,7 +172,7 @@ export function VirtualGrid({ items, onContextMenu, selectedIds, onToggleSelecti
                 index={i}
                 isSelected={isSelected}
                 onToggleSelection={onToggleSelection}
-                onUpdateTrip={onUpdateItem || onUpdateTrip}
+                onUpdateTrip={updateHandler}
                 onNavigate={onNavigate}
                 onContextMenu={onContextMenu}
               />
@@ -192,23 +181,20 @@ export function VirtualGrid({ items, onContextMenu, selectedIds, onToggleSelecti
 
           <motion.div
             layout
-            onClick={() => onUpdateTrip?.('NEW_POP_MODAL')}
+            onClick={() => updateHandler?.('NEW_POP_MODAL')}
             className="border border-dashed border-white/8 rounded-xl flex flex-col items-center justify-center gap-1.5 text-white/20 hover:text-white/40 hover:border-white/15 transition-all cursor-pointer min-h-[180px]"
           >
             <PlusIcon size={20} />
             <span className="text-[11px] font-medium">New page</span>
           </motion.div>
-        </LayoutGroup>
       </div>
 
-      {/* Sentinel for infinite scroll */}
       {displayLimit < items.length && (
         <div ref={sentinelRef} className="h-20 w-full flex items-center justify-center">
            <div className="w-6 h-6 border-2 border-white/10 border-t-white/40 rounded-full animate-spin" />
         </div>
       )}
 
-      {/* Selection Overlay */}
       <AnimatePresence>
         {selectionBoxStyle && (
           <div

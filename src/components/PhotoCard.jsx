@@ -4,13 +4,16 @@ import { Image, MoreVertical, Calendar, Heart } from 'lucide-react';
 import { format } from 'date-fns';
 import clsx from 'clsx';
 
-export function PhotoCard({ fileInfo, index, onContextMenu, isSelected, onToggleSelection, onNavigate, onUpdate }) {
+export function PhotoCard({ fileInfo, index, onContextMenu, isSelected, onToggleSelection, onNavigate, onUpdate, animatingTargetId }) {
   const imgUrl = useObjectUrl(fileInfo.handle);
   const date = fileInfo.timestamp ? new Date(fileInfo.timestamp) : null;
   const rating = fileInfo.rating ?? 0;
   
   // 提取简单的文件名作为标题（移除扩展名）
   const displayTitle = fileInfo.name.replace(/\.[^/.]+$/, "");
+
+  // 为分配到已有项提供“飞入”目标的 layoutId
+  const finalLayoutId = (isSelected && animatingTargetId) ? animatingTargetId : fileInfo.path;
 
   return (
     <motion.div
@@ -25,7 +28,7 @@ export function PhotoCard({ fileInfo, index, onContextMenu, isSelected, onToggle
       onContextMenu={(e) => onContextMenu(e, fileInfo)}
       onClick={(e) => {
         e.stopPropagation();
-        onToggleSelection(fileInfo.path);
+        onToggleSelection(fileInfo.path, index, e);
       }}
       onDoubleClick={(e) => {
         e.stopPropagation();
@@ -44,13 +47,21 @@ export function PhotoCard({ fileInfo, index, onContextMenu, isSelected, onToggle
       {/* ── Cover photo ── */}
       <div className="relative w-full aspect-[3/2] overflow-hidden rounded-t-xl shrink-0">
         {imgUrl ? (
-          <img 
+          <motion.img 
+            layoutId={finalLayoutId}
             src={imgUrl} 
             alt={fileInfo.name} 
             className={clsx(
                 "w-full h-full object-cover transition-transform duration-500 group-hover:scale-110",
-                isSelected && "brightness-90"
+                isSelected && "brightness-90 opacity-80"
             )}
+            transition={{ 
+              type: "spring",
+              stiffness: 220,
+              damping: 22,
+              mass: 1.1,
+              duration: 1.0
+            }}
             loading="lazy"
           />
         ) : (
@@ -75,15 +86,13 @@ export function PhotoCard({ fileInfo, index, onContextMenu, isSelected, onToggle
       </div>
 
       {/* ── Metadata body ── */}
-      <div className="p-2.5 flex flex-col gap-1 relative">
-        {/* Top Row: Memory Tag & Rating */}
-        <div className="flex items-center justify-between">
-          <div className="flex flex-wrap gap-1">
-            <span className="rounded px-1.5 py-0.5 text-[9px] font-semibold whitespace-nowrap bg-blue-500/20 text-blue-400">
-              Memory
-            </span>
-          </div>
-          <div className="flex items-center gap-0.5">
+      <div className="p-3 flex flex-col gap-1.5 relative">
+        {/* Title and Rating Row */}
+        <div className="flex items-center justify-between gap-3 mt-1 min-w-0">
+          <h3 className="text-white text-[11px] font-bold truncate leading-tight flex-1">
+            {displayTitle}
+          </h3>
+          <div className="flex items-center gap-0.5 shrink-0">
             {[...Array(10)].map((_, i) => {
               const active = i < rating;
               return (
@@ -111,23 +120,19 @@ export function PhotoCard({ fileInfo, index, onContextMenu, isSelected, onToggle
           </div>
         </div>
 
-        {/* Title */}
-        <h3 className="text-white text-[11px] font-bold truncate mt-1">{displayTitle}</h3>
-
-        {/* Date */}
-        <div className="flex items-center gap-1.5 mt-0.5">
+        {/* Date Row */}
+        <div className="flex items-center gap-1.5">
           <span className="text-[9px] text-neutral-500">
-            {date ? format(date, 'MMM d, yyyy') : 'Unknown Date'}
+            {date ? format(date, 'MMMM d, yyyy') : 'Unknown Date'}
           </span>
         </div>
 
-        {/* Badge area */}
-        <div className="flex items-center justify-between mt-1">
-          <div className="flex items-center gap-1.5 px-1.5 py-0.5 rounded-md bg-blue-500/10 border border-blue-500/20 text-blue-400">
+        {/* Badge area: Fixed at bottom left */}
+        <div className="mt-auto pt-1">
+          <div className="flex items-center gap-1.5 px-1.5 py-0.5 rounded-md bg-blue-500/10 border border-blue-500/20 text-blue-400 w-fit">
             <Image size={10} strokeWidth={2.5} />
             <span className="text-[8px] font-black uppercase tracking-wider">Photo</span>
           </div>
-          <span className="text-[8px] text-white/10 font-mono italic">#{index + 1}</span>
         </div>
       </div>
     </motion.div>

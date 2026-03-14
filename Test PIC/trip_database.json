@@ -1,86 +1,6 @@
 {
-  "trips": [
-    {
-      "trip_id": "012f64de-c9ae-42de-b955-d65473b2e19a",
-      "title": "6666",
-      "rating": 7,
-      "category": "旅行",
-      "city": "",
-      "date": "2026-03-14",
-      "startDate": "2026-03-14",
-      "endDate": "2026-03-18",
-      "duration": 0,
-      "spending": 500,
-      "currency": "CNY",
-      "latitude": "",
-      "longitude": "",
-      "tags": [],
-      "notes": "",
-      "cover_photo_id": null
-    }
-  ],
-  "events": [
-    {
-      "event_id": "d31961bd-2c71-4823-9a36-c251a18bee7b",
-      "trip_id": "012f64de-c9ae-42de-b955-d65473b2e19a",
-      "title": "2222",
-      "rating": 8,
-      "category": "Sightseeing",
-      "city": "",
-      "date": "2026-03-14",
-      "spending": 0,
-      "currency": "CNY",
-      "latitude": null,
-      "longitude": null,
-      "tags": [],
-      "notes": ""
-    },
-    {
-      "event_id": "ae9fec64-bb83-47a5-ac43-6b96fc94e37f",
-      "trip_id": "012f64de-c9ae-42de-b955-d65473b2e19a",
-      "title": "33333",
-      "rating": 8,
-      "category": "Sightseeing",
-      "city": "",
-      "date": "2026-03-14",
-      "spending": 0,
-      "currency": "CNY",
-      "latitude": null,
-      "longitude": null,
-      "tags": [],
-      "notes": ""
-    },
-    {
-      "event_id": "f2645cd1-fb02-4977-bbba-c21fdb475fac",
-      "trip_id": null,
-      "title": "22222",
-      "rating": 8,
-      "category": "Sightseeing",
-      "city": "",
-      "date": "2026-03-14",
-      "spending": 0,
-      "currency": "CNY",
-      "latitude": null,
-      "longitude": null,
-      "tags": [],
-      "notes": ""
-    },
-    {
-      "event_id": "6eb615f3-f108-4b39-93ba-f41d43402aad",
-      "trip_id": null,
-      "title": "4444",
-      "rating": 5,
-      "category": "Sightseeing",
-      "city": "",
-      "date": "2026-03-14",
-      "spending": 0,
-      "currency": "CNY",
-      "latitude": null,
-      "longitude": null,
-      "tags": [],
-      "notes": ""
-    }
-  ],
+  "trips": [],
+  "events": [],
   "photos": [
     {
       "photo_id": "e57f3508-71bd-4f69-b7bd-5bee74bb7517",
@@ -92,49 +12,43 @@
       "photo_id": "a77d1a24-0193-48ec-892c-1e072a263d8e",
       "file_name": "004c6f2b2183458e87dd7ed2bdc5ac55.jpeg",
       "timestamp": "2026-03-14T17:34:08.274Z",
-      "event_id": "f2645cd1-fb02-4977-bbba-c21fdb475fac"
-    },
-    {
-      "photo_id": "609afc1c-ba9e-45e5-8afb-adc5e6c2ac55",
-      "file_name": "0c52451d9bf1181a308727869f029ef0.jpg",
-      "timestamp": "2026-03-14T17:34:08.274Z",
-      "event_id": "f2645cd1-fb02-4977-bbba-c21fdb475fac"
+      "event_id": null
     },
     {
       "photo_id": "93d63273-d055-4c32-bdfe-9508a93aadc3",
       "file_name": "1123869736_15451137816271n.jpg",
       "timestamp": "2026-03-14T05:56:33.947Z",
-      "event_id": "d31961bd-2c71-4823-9a36-c251a18bee7b"
+      "event_id": null
+    },
+    {
+      "photo_id": "609afc1c-ba9e-45e5-8afb-adc5e6c2ac55",
+      "file_name": "0c52451d9bf1181a308727869f029ef0.jpg",
+      "timestamp": "2026-03-14T17:34:08.274Z",
+      "event_id": null
     },
     {
       "photo_id": "9da7c998-b4f4-492c-af21-96303aab4297",
       "file_name": "116835e6c06ddc9f448f4aae6c9e5462.jpg",
       "timestamp": "2026-03-14T05:56:33.947Z",
-      "event_id": "d31961bd-2c71-4823-9a36-c251a18bee7b"
+      "event_id": null
     },
     {
       "photo_id": "901e0bf7-b58e-462a-9634-297fd87889d1",
       "file_name": "1677671048mqdn.jpg",
       "timestamp": "2026-03-14T05:56:33.947Z",
-      "event_id": "d31961bd-2c71-4823-9a36-c251a18bee7b"
+      "event_id": null
     },
     {
       "photo_id": "6b7ab135-7f6d-4c1c-8de2-fc2974e1ede6",
       "file_name": "1677671052gw7j.jpg",
       "timestamp": "2026-03-14T05:56:33.947Z",
-      "event_id": "ae9fec64-bb83-47a5-ac43-6b96fc94e37f"
+      "event_id": null
     },
     {
       "photo_id": "a78a0dd2-7973-47c7-bfa0-35f2e5470184",
       "file_name": "1677671055dvev.jpg",
       "timestamp": "2026-03-14T05:56:33.947Z",
-      "event_id": "6eb615f3-f108-4b39-93ba-f41d43402aad"
-    },
-    {
-      "photo_id": "37b22a11-d09f-4b68-81c8-66009c4ded71",
-      "file_name": "1682673068fnjp.jpg",
-      "timestamp": "2026-03-14T05:56:33.947Z",
-      "event_id": "6eb615f3-f108-4b39-93ba-f41d43402aad"
+      "event_id": null
     },
     {
       "photo_id": "e03c17e6-c7ad-42b1-89a8-791194eb5f11",
@@ -143,15 +57,21 @@
       "event_id": null
     },
     {
-      "photo_id": "49259ebb-b2f5-42a5-a4ec-983a4f682c52",
-      "file_name": "1a250d91279274b71ff2fe03a1e4288f.jpg",
-      "timestamp": "2026-03-14T17:34:08.274Z",
+      "photo_id": "37b22a11-d09f-4b68-81c8-66009c4ded71",
+      "file_name": "1682673068fnjp.jpg",
+      "timestamp": "2026-03-14T05:56:33.947Z",
       "event_id": null
     },
     {
       "photo_id": "16613aef-74aa-45f3-abc4-43f00b9f169b",
       "file_name": "168530521040398_P16952808.webp",
       "timestamp": "2026-03-13T23:43:44.743Z",
+      "event_id": null
+    },
+    {
+      "photo_id": "49259ebb-b2f5-42a5-a4ec-983a4f682c52",
+      "file_name": "1a250d91279274b71ff2fe03a1e4288f.jpg",
+      "timestamp": "2026-03-14T17:34:08.274Z",
       "event_id": null
     },
     {
@@ -164,7 +84,13 @@
       "photo_id": "ceb628b5-1455-4eb9-a78d-daf230d7dd14",
       "file_name": "1Z629105604-3-1200.jpg",
       "timestamp": "2026-03-14T17:34:08.274Z",
-      "event_id": "ae9fec64-bb83-47a5-ac43-6b96fc94e37f"
+      "event_id": null
+    },
+    {
+      "photo_id": "1c8e142b-6ee5-4f57-b169-93e801a9bfd0",
+      "file_name": "200Q0114627-4-1200.jpg",
+      "timestamp": "2026-03-14T05:56:33.947Z",
+      "event_id": null
     },
     {
       "photo_id": "a1ed37aa-5aea-4c7b-a410-4c38d80d9048",
@@ -173,8 +99,8 @@
       "event_id": null
     },
     {
-      "photo_id": "1c8e142b-6ee5-4f57-b169-93e801a9bfd0",
-      "file_name": "200Q0114627-4-1200.jpg",
+      "photo_id": "33a9b22b-ece2-41e4-a68e-9c369db6c4fb",
+      "file_name": "200Q0114627-6-1200.jpg",
       "timestamp": "2026-03-14T05:56:33.947Z",
       "event_id": null
     },
@@ -187,12 +113,6 @@
     {
       "photo_id": "07726f5b-d48e-46d0-ad12-737400b28b8a",
       "file_name": "201226120K7-11-1200.jpg",
-      "timestamp": "2026-03-14T05:56:33.947Z",
-      "event_id": null
-    },
-    {
-      "photo_id": "33a9b22b-ece2-41e4-a68e-9c369db6c4fb",
-      "file_name": "200Q0114627-6-1200.jpg",
       "timestamp": "2026-03-14T05:56:33.947Z",
       "event_id": null
     },
@@ -227,14 +147,14 @@
       "event_id": null
     },
     {
-      "photo_id": "17e77162-3038-405f-be0c-d9f47d504eff",
-      "file_name": "20180603084615_opecm.jpg",
+      "photo_id": "d90f7561-9d0a-451a-8ac0-5981f6102afa",
+      "file_name": "20180603084718_maejg.jpg",
       "timestamp": "2026-03-14T05:56:33.947Z",
       "event_id": null
     },
     {
-      "photo_id": "d90f7561-9d0a-451a-8ac0-5981f6102afa",
-      "file_name": "20180603084718_maejg.jpg",
+      "photo_id": "17e77162-3038-405f-be0c-d9f47d504eff",
+      "file_name": "20180603084615_opecm.jpg",
       "timestamp": "2026-03-14T05:56:33.947Z",
       "event_id": null
     },
@@ -257,14 +177,14 @@
       "event_id": null
     },
     {
-      "photo_id": "053fcc22-0d70-4511-a53a-59134e59e392",
-      "file_name": "20220726004200.jpg",
+      "photo_id": "af13b542-6a20-451a-8719-bba1c8285a86",
+      "file_name": "20220828003206.jpg",
       "timestamp": "2026-03-14T05:56:33.947Z",
       "event_id": null
     },
     {
-      "photo_id": "af13b542-6a20-451a-8719-bba1c8285a86",
-      "file_name": "20220828003206.jpg",
+      "photo_id": "053fcc22-0d70-4511-a53a-59134e59e392",
+      "file_name": "20220726004200.jpg",
       "timestamp": "2026-03-14T05:56:33.947Z",
       "event_id": null
     },
@@ -287,14 +207,14 @@
       "event_id": null
     },
     {
-      "photo_id": "1cf9f362-5da3-439a-a27b-518d9bf9ddff",
-      "file_name": "20221128032119709020.jpg",
+      "photo_id": "20818899-1ac8-441b-a645-71d7956feb91",
+      "file_name": "20221025090326rqcrll_small.jpg",
       "timestamp": "2026-03-13T23:43:44.743Z",
       "event_id": null
     },
     {
-      "photo_id": "20818899-1ac8-441b-a645-71d7956feb91",
-      "file_name": "20221025090326rqcrll_small.jpg",
+      "photo_id": "1cf9f362-5da3-439a-a27b-518d9bf9ddff",
+      "file_name": "20221128032119709020.jpg",
       "timestamp": "2026-03-13T23:43:44.743Z",
       "event_id": null
     },
@@ -305,14 +225,14 @@
       "event_id": null
     },
     {
-      "photo_id": "0e693505-509f-4b9b-b0c9-c0f3c84715e9",
-      "file_name": "3009615ec73441c5a9755c4b11244a2e.jpeg",
+      "photo_id": "a612e44a-22b7-41c5-8dc4-5c9aa9f08d4f",
+      "file_name": "25453fa4fbcd5e612e73ac8e2c70f1c8.jpg",
       "timestamp": "2026-03-14T05:56:33.947Z",
       "event_id": null
     },
     {
-      "photo_id": "a612e44a-22b7-41c5-8dc4-5c9aa9f08d4f",
-      "file_name": "25453fa4fbcd5e612e73ac8e2c70f1c8.jpg",
+      "photo_id": "0e693505-509f-4b9b-b0c9-c0f3c84715e9",
+      "file_name": "3009615ec73441c5a9755c4b11244a2e.jpeg",
       "timestamp": "2026-03-14T05:56:33.947Z",
       "event_id": null
     },
@@ -323,15 +243,15 @@
       "event_id": null
     },
     {
-      "photo_id": "cb076006-a1f6-4b17-b7fa-fda231874ec3",
-      "file_name": "43d6fa6975d33bcd647dfeabb51ec66b.jpg",
-      "timestamp": "2026-03-14T17:34:08.274Z",
-      "event_id": null
-    },
-    {
       "photo_id": "f9de31f0-29d6-4827-a3b6-3008a15749df",
       "file_name": "455570018dc45d1c8dca3cfe984f7b93.jpg",
       "timestamp": "2026-03-14T05:56:33.947Z",
+      "event_id": null
+    },
+    {
+      "photo_id": "cb076006-a1f6-4b17-b7fa-fda231874ec3",
+      "file_name": "43d6fa6975d33bcd647dfeabb51ec66b.jpg",
+      "timestamp": "2026-03-14T17:34:08.274Z",
       "event_id": null
     },
     {
@@ -341,14 +261,14 @@
       "event_id": null
     },
     {
-      "photo_id": "b5c1ff7a-0015-4dd8-abca-02facc95a87e",
-      "file_name": "4fd695f8cbd90fa918916be624813cce.jpg",
+      "photo_id": "38d65278-18ee-4680-b400-17b0b13335f8",
+      "file_name": "4d766babbead7eabaa4733a06203832d.jpg",
       "timestamp": "2026-03-14T17:34:08.274Z",
       "event_id": null
     },
     {
-      "photo_id": "38d65278-18ee-4680-b400-17b0b13335f8",
-      "file_name": "4d766babbead7eabaa4733a06203832d.jpg",
+      "photo_id": "b5c1ff7a-0015-4dd8-abca-02facc95a87e",
+      "file_name": "4fd695f8cbd90fa918916be624813cce.jpg",
       "timestamp": "2026-03-14T17:34:08.274Z",
       "event_id": null
     },
@@ -395,12 +315,6 @@
       "event_id": null
     },
     {
-      "photo_id": "4a9e1a83-3210-40c9-b73f-590f42e63f22",
-      "file_name": "b9cb7ce46e4d7d379d5e618ac80e67c7.jpg",
-      "timestamp": "2026-03-14T05:56:33.947Z",
-      "event_id": null
-    },
-    {
       "photo_id": "be73806f-e98f-4d32-a06c-924dd541ccec",
       "file_name": "9e5ab5d574f057367fb40bec555831ca.jpg",
       "timestamp": "2026-03-14T17:34:08.274Z",
@@ -413,9 +327,9 @@
       "event_id": null
     },
     {
-      "photo_id": "c34b9bea-29d2-4014-8d91-f6c205dd026a",
-      "file_name": "dcb88d42d0b82bb59a16c7cf66ddded7_1280.webp",
-      "timestamp": "2026-03-14T17:34:08.274Z",
+      "photo_id": "4a9e1a83-3210-40c9-b73f-590f42e63f22",
+      "file_name": "b9cb7ce46e4d7d379d5e618ac80e67c7.jpg",
+      "timestamp": "2026-03-14T05:56:33.947Z",
       "event_id": null
     },
     {
@@ -437,6 +351,12 @@
       "event_id": null
     },
     {
+      "photo_id": "c34b9bea-29d2-4014-8d91-f6c205dd026a",
+      "file_name": "dcb88d42d0b82bb59a16c7cf66ddded7_1280.webp",
+      "timestamp": "2026-03-14T17:34:08.274Z",
+      "event_id": null
+    },
+    {
       "photo_id": "5500a60e-f730-486b-b62f-d20af6472fab",
       "file_name": "fba58b89f24f4840bf3fbdf6d71f9eb1~noop.jpg",
       "timestamp": "2026-03-14T17:34:08.274Z",
@@ -449,14 +369,14 @@
       "event_id": null
     },
     {
-      "photo_id": "e224029b-9ba0-4bbe-b323-b8816e2adef2",
-      "file_name": "images (1).jpg",
+      "photo_id": "c6116091-cfd9-4a1d-8087-64ad351856d3",
+      "file_name": "gDsQdRcwREm7py06x1GCdpJay6aEoitkYVuBImFbgSI.jpg",
       "timestamp": "2026-03-14T17:34:08.274Z",
       "event_id": null
     },
     {
-      "photo_id": "c6116091-cfd9-4a1d-8087-64ad351856d3",
-      "file_name": "gDsQdRcwREm7py06x1GCdpJay6aEoitkYVuBImFbgSI.jpg",
+      "photo_id": "e224029b-9ba0-4bbe-b323-b8816e2adef2",
+      "file_name": "images (1).jpg",
       "timestamp": "2026-03-14T17:34:08.274Z",
       "event_id": null
     },
@@ -467,14 +387,14 @@
       "event_id": null
     },
     {
-      "photo_id": "a4268157-f661-4d6c-8def-4b4dd0118692",
-      "file_name": "mi6.webp",
+      "photo_id": "84953849-e7a1-4b89-92c3-3c22ca87b356",
+      "file_name": "rg5raegtlwi.jpg",
       "timestamp": "2026-03-14T17:34:08.274Z",
       "event_id": null
     },
     {
-      "photo_id": "84953849-e7a1-4b89-92c3-3c22ca87b356",
-      "file_name": "rg5raegtlwi.jpg",
+      "photo_id": "a4268157-f661-4d6c-8def-4b4dd0118692",
+      "file_name": "mi6.webp",
       "timestamp": "2026-03-14T17:34:08.274Z",
       "event_id": null
     },

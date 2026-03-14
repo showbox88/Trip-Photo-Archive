@@ -47,7 +47,7 @@ function Tag({ label, small }) {
 }
 
 // ─── Collection Card (竖向 Notion 画廊样式) ──────────────────────────────────────────
-export function CollectionCard({ type, item, photos, associatedEvents = [], isSelected, onToggleSelection, onNavigate, onContextMenu, onUpdateTrip }) {
+export function CollectionCard({ type, item, photos, associatedEvents = [], index, isSelected, onToggleSelection, onNavigate, onContextMenu, onUpdateTrip }) {
   const isTrip = type === 'trip';
   const itemId = isTrip ? item.trip_id : item.event_id;
   const selectionId = `${type}:${itemId}`;
@@ -99,7 +99,7 @@ export function CollectionCard({ type, item, photos, associatedEvents = [], isSe
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.9 }}
       transition={{ type: 'spring', stiffness: 160, damping: 26 }}
-      onClick={(e) => { e.stopPropagation(); onToggleSelection(selectionId); }}
+      onClick={(e) => { e.stopPropagation(); onToggleSelection(selectionId, index, e); }}
       onDoubleClick={(e) => { e.stopPropagation(); onNavigate({ type, id: itemId }); }}
       onContextMenu={(e) => onContextMenu(e, { ...item, type })}
       data-item-key={selectionId}
@@ -115,7 +115,7 @@ export function CollectionCard({ type, item, photos, associatedEvents = [], isSe
       {/* ── Cover photo ── */}
       <div className="relative w-full aspect-[3/2] overflow-hidden rounded-t-xl shrink-0">
         {photos.length > 0 ? (
-          <CoverImage photo={photos[0]} isSelected={isSelected} />
+          <CoverImage photo={photos[0]} isSelected={isSelected} layoutId={selectionId} />
         ) : (
           <div className="w-full h-full bg-neutral-900 flex items-center justify-center">
             <theme.icon className="text-neutral-700" size={28} />
@@ -124,25 +124,13 @@ export function CollectionCard({ type, item, photos, associatedEvents = [], isSe
       </div>
 
       {/* ── Metadata body ── */}
-      <div ref={menuRef} className="p-2.5 flex flex-col gap-1.5 relative">
+      <div ref={menuRef} className="p-3 flex flex-col gap-1.5 relative">
 
-        {/* Tags (Country for Trip, Category for Event) */}
-        {tags.length > 0 && (
-          <div className="flex flex-wrap gap-1">
-            {tags.map(t => <Tag key={t} label={t} />)}
-          </div>
-        )}
+        {/* Tags moved to bottom */}
 
-        {/* City tags */}
-        {cities.length > 0 && (
-          <div className="flex flex-wrap gap-1">
-            {cities.map(c => <Tag key={c} label={c} small />)}
-          </div>
-        )}
-
-        {/* Title and Rating */}
+        {/* Title and Rating Row */}
         <div className="flex items-center justify-between gap-3 mt-1 min-w-0">
-          <h3 className="text-white text-xs font-bold truncate leading-tight flex-1">
+          <h3 className="text-white text-[11px] font-bold truncate leading-tight flex-1">
             {item.title}
           </h3>
           <div className="flex items-center gap-0.5 shrink-0">
@@ -190,10 +178,10 @@ export function CollectionCard({ type, item, photos, associatedEvents = [], isSe
         {/* Duration (Only for Trip) */}
         {isTrip && <p className="text-[9px] text-neutral-600">Duration: {duration} Days</p>}
 
-        {/* Status badge */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            {/* 统一类型标识 */}
+        {/* Status badge area: Fixed at bottom left */}
+        <div className="mt-auto pt-1">
+          <div className="flex flex-wrap items-center gap-2">
+            {/* 统一类型标识 (左下角) */}
             <div className={clsx(
               'flex items-center gap-1.5 px-1.5 py-0.5 rounded-md border text-[8px] font-black uppercase tracking-wider',
               theme.bg, theme.border, theme.color
@@ -201,6 +189,8 @@ export function CollectionCard({ type, item, photos, associatedEvents = [], isSe
               <theme.icon size={10} strokeWidth={2.5} />
               {isTrip ? 'Trip' : 'Event'}
             </div>
+
+            {/* 内容标签已移除 */}
 
             {/* Trip 专属状态标识 */}
             {isTrip && (
@@ -216,7 +206,6 @@ export function CollectionCard({ type, item, photos, associatedEvents = [], isSe
               </button>
             )}
           </div>
-          <span className="text-[8px] text-white/20 font-mono">{photos.length}P</span>
         </div>
 
         {/* ── Dropdowns (Only for Trip) ── */}
@@ -320,10 +309,11 @@ export function CollectionCard({ type, item, photos, associatedEvents = [], isSe
   );
 }
 
-function CoverImage({ photo, isSelected }) {
+function CoverImage({ photo, isSelected, layoutId }) {
   const imgUrl = useObjectUrl(photo.handle);
   return imgUrl
-    ? <img 
+    ? <motion.img 
+        layoutId={layoutId}
         src={imgUrl} 
         className={clsx(
           "w-full h-full object-cover transition-transform duration-500 group-hover:scale-110",

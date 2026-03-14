@@ -110,27 +110,46 @@ export function CreateTripModal({ isOpen, onClose, events, onCreate, initialSele
               </div>
 
               {previewPhotos.length > 0 && (
-                <div className="mb-8 flex items-center gap-6 p-5 bg-white/5 rounded-2xl border border-white/5 ring-1 ring-white/5 overflow-hidden">
-                  <div className="relative w-20 h-20 shrink-0">
-                    {previewPhotos.map((p, idx) => (
-                      <div 
-                        key={p.path}
-                        className="absolute top-0 left-0 w-16 h-16 rounded-xl overflow-hidden shadow-2xl border border-white/10"
-                        style={{ 
-                          transform: `translate(${idx * 6}px, ${idx * 4}px)`,
-                          zIndex: 10 - idx,
-                          opacity: 1 - (idx * 0.2)
-                        }}
-                      >
-                        <PhotoThumbnail handle={p.handle} />
-                      </div>
-                    ))}
+                <div className="mb-8 flex items-center gap-8 p-5 bg-white/5 rounded-2xl border border-white/5 ring-1 ring-white/5 relative overflow-hidden">
+                  <div className="flex-1 flex items-center h-20 relative px-2">
+                    <div className="flex items-center w-full relative">
+                      {previewPhotos.map((p, idx) => {
+                        const total = previewPhotos.length;
+                        return (
+                          <motion.div 
+                            key={p.path}
+                            className="relative w-16 h-16 rounded-xl overflow-hidden shadow-2xl border border-white/10 shrink-0 group/thumb"
+                            initial={{ x: 20, opacity: 0 }}
+                            animate={{ 
+                              x: 0, 
+                              opacity: 1,
+                              zIndex: idx
+                            }}
+                            whileHover={{ 
+                              y: -8, 
+                              scale: 1.1, 
+                              zIndex: 50,
+                              transition: { duration: 0.2 }
+                            }}
+                            style={{ 
+                              marginLeft: idx === 0 ? 0 : (total > 8 ? "-2.5rem" : total > 4 ? "-1.5rem" : "0.5rem"),
+                            }}
+                          >
+                            <PhotoThumbnail 
+                              handle={p.handle} 
+                              layoutId={`event:${p.event_id}`} 
+                              index={idx}
+                            />
+                          </motion.div>
+                        );
+                      })}
+                    </div>
                   </div>
-                  <div>
+                  <div className="shrink-0 pl-4 border-l border-white/5">
                      <p className="text-xs text-purple-400 font-bold uppercase tracking-wider mb-1">
                        正在整合回忆
                      </p>
-                     <p className="text-sm font-medium text-neutral-300 truncate max-w-[200px]">
+                     <p className="text-sm font-medium text-neutral-300 truncate max-w-[150px]">
                        {selectedEventIds.size} 个选定事件
                      </p>
                   </div>
@@ -313,12 +332,24 @@ export function CreateTripModal({ isOpen, onClose, events, onCreate, initialSele
   );
 }
 
-function PhotoThumbnail({ handle }) {
+function PhotoThumbnail({ handle, layoutId, index }) {
   const url = useObjectUrl(handle);
   return (
     <div className="w-full h-full bg-neutral-800 flex items-center justify-center overflow-hidden">
       {url ? (
-        <img src={url} alt="" className="w-full h-full object-cover opacity-50" />
+        <motion.img 
+          layoutId={layoutId}
+          src={url} 
+          alt="" 
+          className="w-full h-full object-cover" 
+          transition={{ 
+            type: "spring",
+            stiffness: 100,
+            damping: 20,
+            mass: 1.2,
+            delay: index * 0.05
+          }}
+        />
       ) : (
         <div className="w-4 h-4 border-2 border-white/10 border-t-white/30 rounded-full animate-spin" />
       )}
