@@ -1,16 +1,24 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Plane, Briefcase, CheckCircle2, Layers, Flag, Calendar, Activity, Plus } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { useObjectUrl } from '../hooks/useObjectUrl';
 import clsx from 'clsx';
 
 const STAGES = ['Planning', 'Completed', 'Ongoing', 'Canceled'];
 
-export function CreateTripModal({ isOpen, onClose, events, onCreate, initialSelectedIds = [] }) {
+export function CreateTripModal({ isOpen, onClose, events, onCreate, initialSelectedIds = [], allPhotos = [] }) {
   const [title, setTitle] = useState('');
-  const [country, setCountry] = useState('');
+  const [city, setCity] = useState('');
+  const [category, setCategory] = useState('旅行');
+  const [rating, setRating] = useState(8);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [stage, setStage] = useState('Completed');
+  const [spending, setSpending] = useState(0);
+  const [currency, setCurrency] = useState('CNY');
+  const [latitude, setLatitude] = useState('');
+  const [longitude, setLongitude] = useState('');
+  const [tags, setTags] = useState('');
+  const [notes, setNotes] = useState('');
   const [selectedEventIds, setSelectedEventIds] = useState(new Set(initialSelectedIds));
 
   useEffect(() => {
@@ -18,6 +26,23 @@ export function CreateTripModal({ isOpen, onClose, events, onCreate, initialSele
       setSelectedEventIds(new Set(initialSelectedIds));
     }
   }, [isOpen, initialSelectedIds]);
+
+  // 获取选定事件的预览照片
+  const previewPhotos = useMemo(() => {
+    if (!isOpen || selectedEventIds.size === 0 || !allPhotos.length) return [];
+    
+    const ids = Array.from(selectedEventIds);
+    const photos = [];
+    
+    // 为每个选定事件尝试找一张照片，最多找三张不同事件的照片
+    for (const eventId of ids) {
+      const photo = allPhotos.find(p => String(p.event_id) === String(eventId));
+      if (photo) photos.push(photo);
+      if (photos.length >= 3) break;
+    }
+    
+    return photos;
+  }, [isOpen, selectedEventIds, allPhotos]);
 
   if (!isOpen) return null;
 
@@ -27,20 +52,34 @@ export function CreateTripModal({ isOpen, onClose, events, onCreate, initialSele
     
     onCreate({
       title,
-      country,
+      city,
+      category,
+      rating,
       startDate,
       endDate,
-      stage,
+      spending: parseFloat(spending) || 0,
+      currency,
+      latitude: latitude ? parseFloat(latitude) : null,
+      longitude: longitude ? parseFloat(longitude) : null,
+      tags: tags.split(',').map(tag => tag.trim()).filter(Boolean),
+      notes,
       eventIds: Array.from(selectedEventIds),
     });
     
     onClose();
     // Reset
     setTitle('');
-    setCountry('');
+    setCity('');
+    setCategory('旅行');
+    setRating(8);
     setStartDate('');
     setEndDate('');
-    setStage('Completed');
+    setSpending(0);
+    setCurrency('CNY');
+    setLatitude('');
+    setLongitude('');
+    setTags('');
+    setNotes('');
   };
 
   return (
@@ -50,9 +89,9 @@ export function CreateTripModal({ isOpen, onClose, events, onCreate, initialSele
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 20 }}
-          className="relative w-full max-w-2xl bg-[#16171d] border border-white/10 rounded-3xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)] overflow-hidden"
+          className="relative w-full max-w-4xl bg-[#16171d] border border-white/10 rounded-3xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)] overflow-hidden"
         >
-          <div className="p-8">
+          <div className="p-8 max-h-[90vh] overflow-y-auto custom-scrollbar">
               <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-3">
                   <div className="p-2.5 bg-purple-500/20 rounded-xl">
@@ -61,7 +100,7 @@ export function CreateTripModal({ isOpen, onClose, events, onCreate, initialSele
                   <div>
                     <h3 className="text-xl font-bold tracking-tight text-white">开启新行程档案</h3>
                     <p className="text-xs text-neutral-500 font-medium">
-                      正在将 {selectedEventIds.size} 个选定事件归档到新行程
+                      记录一段完整的旅程，整合 {selectedEventIds.size} 个选定事件
                     </p>
                   </div>
                 </div>
@@ -70,57 +109,92 @@ export function CreateTripModal({ isOpen, onClose, events, onCreate, initialSele
                 </button>
               </div>
 
+              {previewPhotos.length > 0 && (
+                <div className="mb-8 flex items-center gap-6 p-5 bg-white/5 rounded-2xl border border-white/5 ring-1 ring-white/5 overflow-hidden">
+                  <div className="relative w-20 h-20 shrink-0">
+                    {previewPhotos.map((p, idx) => (
+                      <div 
+                        key={p.path}
+                        className="absolute top-0 left-0 w-16 h-16 rounded-xl overflow-hidden shadow-2xl border border-white/10"
+                        style={{ 
+                          transform: `translate(${idx * 6}px, ${idx * 4}px)`,
+                          zIndex: 10 - idx,
+                          opacity: 1 - (idx * 0.2)
+                        }}
+                      >
+                        <PhotoThumbnail handle={p.handle} />
+                      </div>
+                    ))}
+                  </div>
+                  <div>
+                     <p className="text-xs text-purple-400 font-bold uppercase tracking-wider mb-1">
+                       正在整合回忆
+                     </p>
+                     <p className="text-sm font-medium text-neutral-300 truncate max-w-[200px]">
+                       {selectedEventIds.size} 个选定事件
+                     </p>
+                  </div>
+                </div>
+              )}
+
               <form onSubmit={handleSubmit}>
-                <div className="grid grid-cols-2 gap-8">
-                  {/* Left Column */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                  {/* Left Column: Core Info */}
                   <div className="space-y-6">
                     <div>
                       <label className="block text-[10px] font-bold uppercase tracking-[0.15em] text-neutral-500 mb-2 ml-1">行程标题</label>
                       <input
                         autoFocus
                         type="text"
-                        className="w-full bg-white/5 border border-white/10 focus:border-purple-500/50 rounded-2xl px-5 py-4 font-medium outline-none transition-all placeholder:text-neutral-600 focus:ring-1 focus:ring-purple-500/10 text-white"
+                        className="w-full bg-white/5 border border-white/10 focus:border-purple-500/50 rounded-2xl px-5 py-4 font-medium outline-none transition-all placeholder:text-neutral-600 focus:ring-1 focus:ring-purple-500/10 text-white text-sm"
                         placeholder="例如：巴塞罗那 2024 夏日庆典"
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
                       />
                     </div>
-                    <div>
-                      <label className="block text-[10px] font-bold uppercase tracking-[0.15em] text-neutral-500 mb-2 ml-1">国家 / 地区</label>
-                      <div className="relative">
-                        <Flag size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-600" />
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase tracking-[0.15em] text-neutral-500 mb-2 ml-1">出发城市</label>
                         <input
                           type="text"
-                          className="w-full bg-white/5 border border-white/10 focus:border-purple-500/50 rounded-2xl pl-12 pr-5 py-4 font-medium outline-none transition-all placeholder:text-neutral-600 focus:ring-1 focus:ring-purple-500/10 text-white"
-                          placeholder="Japan / Spain..."
-                          value={country}
-                          onChange={(e) => setCountry(e.target.value)}
+                          className="w-full bg-white/5 border border-white/10 focus:border-purple-500/50 rounded-2xl px-4 py-4 font-medium outline-none transition-all placeholder:text-neutral-600 text-white text-sm"
+                          placeholder="北京 / 东京..."
+                          value={city}
+                          onChange={(e) => setCity(e.target.value)}
                         />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase tracking-[0.15em] text-neutral-500 mb-2 ml-1">分类</label>
+                        <select
+                          className="w-full bg-[#1e1f28] border border-white/10 focus:border-purple-500/50 rounded-2xl px-4 py-4 font-medium outline-none transition-all text-white text-sm cursor-pointer"
+                          value={category}
+                          onChange={(e) => setCategory(e.target.value)}
+                        >
+                          <option value="旅行">休闲旅行</option>
+                          <option value="出差">商务出差</option>
+                          <option value="探险">户外探险</option>
+                          <option value="回乡">探亲回乡</option>
+                        </select>
                       </div>
                     </div>
                     <div>
-                      <label className="block text-[10px] font-bold uppercase tracking-[0.15em] text-neutral-500 mb-2 ml-1">当前阶段</label>
-                      <div className="flex flex-wrap gap-2">
-                        {STAGES.map(s => (
-                          <button
-                            key={s}
-                            type="button"
-                            onClick={() => setStage(s)}
-                            className={clsx(
-                              "px-3 py-1.5 rounded-full text-[10px] font-bold transition-all border",
-                              stage === s 
-                                ? "bg-purple-500/20 border-purple-500/50 text-purple-400" 
-                                : "bg-white/5 border-white/5 text-neutral-500 hover:border-white/20"
-                            )}
-                          >
-                            {s}
-                          </button>
-                        ))}
+                      <label className="block text-[10px] font-bold uppercase tracking-[0.15em] text-neutral-500 mb-2 ml-1">好感度 (1-10)</label>
+                      <div className="flex items-center gap-4 bg-white/5 px-5 py-4 rounded-2xl border border-white/10">
+                        <input
+                          type="range"
+                          min="1"
+                          max="10"
+                          step="1"
+                          className="flex-1 accent-purple-500 h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer"
+                          value={rating}
+                          onChange={(e) => setRating(parseInt(e.target.value))}
+                        />
+                        <span className="text-purple-400 font-bold text-lg min-w-[2ch]">{rating}</span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Right Column */}
+                  {/* Middle Column: Logistics */}
                   <div className="space-y-6">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
@@ -142,9 +216,75 @@ export function CreateTripModal({ isOpen, onClose, events, onCreate, initialSele
                         />
                       </div>
                     </div>
-                    <div className="p-6 bg-purple-500/5 border border-dashed border-purple-500/20 rounded-2xl flex flex-col items-center justify-center text-center">
-                      <Layers size={24} className="text-purple-500/40 mb-2" />
-                      <p className="text-[11px] text-neutral-500 font-medium italic">创建后，已选的事件将自动关联到此行程档案中。</p>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase tracking-[0.15em] text-neutral-500 mb-2 ml-1">消费金额</label>
+                        <input
+                          type="number"
+                          className="w-full bg-white/5 border border-white/10 focus:border-purple-500/50 rounded-2xl px-4 py-4 font-medium outline-none transition-all placeholder:text-neutral-600 text-white text-sm"
+                          placeholder="0.00"
+                          value={spending}
+                          onChange={(e) => setSpending(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase tracking-[0.15em] text-neutral-500 mb-2 ml-1">货币</label>
+                        <select
+                          className="w-full bg-[#1e1f28] border border-white/10 focus:border-purple-500/50 rounded-2xl px-4 py-4 font-medium outline-none transition-all text-white text-sm cursor-pointer"
+                          value={currency}
+                          onChange={(e) => setCurrency(e.target.value)}
+                        >
+                          <option value="CNY">人民币 (¥)</option>
+                          <option value="USD">美元 ($)</option>
+                          <option value="JPY">日元 (¥)</option>
+                          <option value="EUR">欧元 (€)</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase tracking-[0.15em] text-neutral-500 mb-2 ml-1">GPS 纬度</label>
+                        <input
+                          type="text"
+                          className="w-full bg-white/5 border border-white/10 focus:border-purple-500/50 rounded-2xl px-4 py-4 font-medium outline-none transition-all placeholder:text-neutral-600 text-white text-sm"
+                          placeholder="Lat (例如 39.9)"
+                          value={latitude}
+                          onChange={(e) => setLatitude(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase tracking-[0.15em] text-neutral-500 mb-2 ml-1">GPS 经度</label>
+                        <input
+                          type="text"
+                          className="w-full bg-white/5 border border-white/10 focus:border-purple-500/50 rounded-2xl px-4 py-4 font-medium outline-none transition-all placeholder:text-neutral-600 text-white text-sm"
+                          placeholder="Lng (例如 116.4)"
+                          value={longitude}
+                          onChange={(e) => setLongitude(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right Column: Tags & Notes */}
+                  <div className="space-y-6">
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase tracking-[0.15em] text-neutral-500 mb-2 ml-1">标签 (用逗号隔开)</label>
+                      <input
+                        type="text"
+                        className="w-full bg-white/5 border border-white/10 focus:border-purple-500/50 rounded-2xl px-5 py-4 font-medium outline-none transition-all placeholder:text-neutral-600 focus:ring-1 focus:ring-purple-500/10 text-white text-sm"
+                        placeholder="美食, 拍照, 艺术..."
+                        value={tags}
+                        onChange={(e) => setTags(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase tracking-[0.15em] text-neutral-500 mb-2 ml-1">备注</label>
+                      <textarea
+                        className="w-full h-[155px] bg-white/5 border border-white/10 focus:border-purple-500/50 rounded-2xl px-5 py-4 font-medium outline-none transition-all placeholder:text-neutral-600 focus:ring-1 focus:ring-purple-500/10 text-white text-sm resize-none"
+                        placeholder="在这里记录你的心情、攻略或未尽的事宜..."
+                        value={notes}
+                        onChange={(e) => setNotes(e.target.value)}
+                      />
                     </div>
                   </div>
                 </div>
@@ -170,5 +310,18 @@ export function CreateTripModal({ isOpen, onClose, events, onCreate, initialSele
         </motion.div>
       </div>
     </AnimatePresence>
+  );
+}
+
+function PhotoThumbnail({ handle }) {
+  const url = useObjectUrl(handle);
+  return (
+    <div className="w-full h-full bg-neutral-800 flex items-center justify-center overflow-hidden">
+      {url ? (
+        <img src={url} alt="" className="w-full h-full object-cover opacity-50" />
+      ) : (
+        <div className="w-4 h-4 border-2 border-white/10 border-t-white/30 rounded-full animate-spin" />
+      )}
+    </div>
   );
 }

@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Calendar, Tags, CheckCircle2, Layers, MapPin, Star, MessageSquare } from 'lucide-react';
 import { useState } from 'react';
+import { useObjectUrl } from '../hooks/useObjectUrl';
 import clsx from 'clsx';
 
 const CATEGORIES = ['Sightseeing', 'Food', 'Transport', 'Hotel', 'Shopping', 'Other'];
@@ -9,7 +10,13 @@ export function CreateEventModal({ isOpen, onClose, photos, onCreate }) {
   const [title, setTitle] = useState('');
   const [city, setCity] = useState('');
   const [category, setCategory] = useState('Sightseeing');
-  const [rate, setRate] = useState(0);
+  const [rating, setRating] = useState(8);
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [spending, setSpending] = useState(0);
+  const [currency, setCurrency] = useState('CNY');
+  const [latitude, setLatitude] = useState('');
+  const [longitude, setLongitude] = useState('');
+  const [tags, setTags] = useState('');
   const [notes, setNotes] = useState('');
 
   if (!isOpen || !photos || photos.length === 0) return null;
@@ -22,17 +29,29 @@ export function CreateEventModal({ isOpen, onClose, photos, onCreate }) {
       title,
       city,
       category,
-      rate,
+      rating,
+      date,
+      spending: parseFloat(spending) || 0,
+      currency,
+      latitude: latitude ? parseFloat(latitude) : null,
+      longitude: longitude ? parseFloat(longitude) : null,
+      tags: tags.split(',').map(tag => tag.trim()).filter(Boolean),
       notes,
       photoIds: photos.map(p => p.path),
     });
     
-    // Instead of full screen block, we just close and reset
     onClose();
+    // Reset
     setTitle('');
     setCity('');
     setCategory('Sightseeing');
-    setRate(0);
+    setRating(8);
+    setDate(new Date().toISOString().split('T')[0]);
+    setSpending(0);
+    setCurrency('CNY');
+    setLatitude('');
+    setLongitude('');
+    setTags('');
     setNotes('');
   };
 
@@ -43,15 +62,20 @@ export function CreateEventModal({ isOpen, onClose, photos, onCreate }) {
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 20 }}
-          className="relative w-full max-w-2xl bg-[#16171d] border border-white/10 rounded-3xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)] overflow-hidden"
+          className="relative w-full max-w-4xl bg-[#16171d] border border-white/10 rounded-3xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)] overflow-hidden"
         >
-          <div className="p-8">
+          <div className="p-8 max-h-[90vh] overflow-y-auto custom-scrollbar">
               <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-3">
-                  <div className="p-2.5 bg-blue-500/20 rounded-xl">
-                    <Calendar size={20} className="text-blue-400" />
+                  <div className="p-2.5 bg-orange-500/20 rounded-xl">
+                    <Calendar size={20} className="text-orange-400" />
                   </div>
-                  <h3 className="text-xl font-bold tracking-tight text-white">创建新事件</h3>
+                  <div>
+                    <h3 className="text-xl font-bold tracking-tight text-white">创建新事件</h3>
+                    <p className="text-xs text-neutral-500 font-medium">
+                      正在将 {photos.length} 张照片归档至此事件
+                    </p>
+                  </div>
                 </div>
                 <button 
                   onClick={onClose}
@@ -63,7 +87,6 @@ export function CreateEventModal({ isOpen, onClose, photos, onCreate }) {
 
               <div className="mb-8 flex items-center gap-6 p-5 bg-white/5 rounded-2xl border border-white/5 ring-1 ring-white/5 overflow-hidden">
                 <div className="relative w-20 h-20 shrink-0">
-                  {/* Visual Stacking Effect for Multiple Photos */}
                   {photos.slice(0, 3).map((p, idx) => (
                     <div 
                       key={p.path}
@@ -74,103 +97,153 @@ export function CreateEventModal({ isOpen, onClose, photos, onCreate }) {
                         opacity: 1 - (idx * 0.2)
                       }}
                     >
-                      <div className="w-full h-full bg-neutral-800 flex items-center justify-center">
-                         <Layers size={20} className="text-neutral-500" />
-                      </div>
+                      <PhotoThumbnail handle={p.handle} />
                     </div>
                   ))}
                 </div>
                 <div>
-                   <p className="text-xs text-blue-400 font-bold uppercase tracking-wider mb-1">
-                     {photos.length === 1 ? '正在归类照片' : `正在归类 ${photos.length} 张照片`}
+                   <p className="text-xs text-orange-400 font-bold uppercase tracking-wider mb-1">
+                     正在归类回忆
                    </p>
                    <p className="text-sm font-medium text-neutral-300 truncate max-w-[200px]">
-                     {photos.length === 1 ? photos[0].name : "批量操作"}
+                     {photos.length === 1 ? photos[0].name : `${photos.length} 项所选内容`}
                    </p>
                 </div>
               </div>
 
               <form onSubmit={handleSubmit}>
-                <div className="grid grid-cols-2 gap-8">
-                  {/* Left Column */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                  {/* Left Column: Core */}
                   <div className="space-y-6">
                     <div>
                       <label className="block text-[10px] font-bold uppercase tracking-[0.15em] text-neutral-500 mb-2 ml-1">事件名称</label>
                       <input
                         autoFocus
                         type="text"
-                        className="w-full bg-white/5 border border-white/10 focus:border-blue-500/50 rounded-2xl px-5 py-4 font-medium outline-none transition-all placeholder:text-neutral-600 focus:ring-1 focus:ring-blue-500/10 text-white"
+                        className="w-full bg-white/5 border border-white/10 focus:border-orange-500/50 rounded-2xl px-5 py-4 font-medium outline-none transition-all placeholder:text-neutral-600 focus:ring-1 focus:ring-orange-500/10 text-white text-sm"
                         placeholder="例如：圣家堂一日游..."
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
                       />
                     </div>
-
-                    <div>
-                      <label className="block text-[10px] font-bold uppercase tracking-[0.15em] text-neutral-500 mb-2 ml-1">城市 / 地点</label>
-                      <div className="relative">
-                        <MapPin size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-600" />
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase tracking-[0.15em] text-neutral-500 mb-2 ml-1">城市 / 地点</label>
                         <input
                           type="text"
-                          className="w-full bg-white/5 border border-white/10 focus:border-blue-500/50 rounded-2xl pl-12 pr-5 py-4 font-medium outline-none transition-all placeholder:text-neutral-600 focus:ring-1 focus:ring-blue-500/10 text-white"
+                          className="w-full bg-white/5 border border-white/10 focus:border-orange-500/50 rounded-2xl px-4 py-4 font-medium outline-none transition-all placeholder:text-neutral-600 text-white text-sm"
                           placeholder="Tokyo, Japan"
                           value={city}
                           onChange={(e) => setCity(e.target.value)}
                         />
                       </div>
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase tracking-[0.15em] text-neutral-500 mb-2 ml-1">日期</label>
+                        <input
+                          type="date"
+                          className="w-full bg-white/5 border border-white/10 focus:border-orange-500/50 rounded-2xl px-4 py-4 text-sm font-medium outline-none transition-all text-white [color-scheme:dark]"
+                          value={date}
+                          onChange={(e) => setDate(e.target.value)}
+                        />
+                      </div>
                     </div>
-
                     <div>
                       <label className="block text-[10px] font-bold uppercase tracking-[0.15em] text-neutral-500 mb-2 ml-1">分类</label>
-                      <div className="flex flex-wrap gap-2">
+                      <select
+                        className="w-full bg-[#1e1f28] border border-white/10 focus:border-orange-500/50 rounded-2xl px-4 py-4 font-medium outline-none transition-all text-white text-sm cursor-pointer"
+                        value={category}
+                        onChange={(e) => setCategory(e.target.value)}
+                      >
                         {CATEGORIES.map(cat => (
-                          <button
-                            key={cat}
-                            type="button"
-                            onClick={() => setCategory(cat)}
-                            className={clsx(
-                              "px-3 py-1.5 rounded-full text-[10px] font-bold transition-all border",
-                              category === cat 
-                                ? "bg-blue-500/20 border-blue-500/50 text-blue-400" 
-                                : "bg-white/5 border-white/5 text-neutral-500 hover:border-white/20"
-                            )}
-                          >
-                            {cat}
-                          </button>
+                          <option key={cat} value={cat}>{cat}</option>
                         ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Middle Column: Detail */}
+                  <div className="space-y-6">
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase tracking-[0.15em] text-neutral-500 mb-2 ml-1">好感度 (1-10)</label>
+                      <div className="flex items-center gap-4 bg-white/5 px-5 py-4 rounded-2xl border border-white/10">
+                        <input
+                          type="range"
+                          min="1"
+                          max="10"
+                          step="1"
+                          className="flex-1 accent-orange-500 h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer"
+                          value={rating}
+                          onChange={(e) => setRating(parseInt(e.target.value))}
+                        />
+                        <span className="text-orange-400 font-bold text-lg min-w-[2ch]">{rating}</span>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase tracking-[0.15em] text-neutral-500 mb-2 ml-1">消费金额</label>
+                        <input
+                          type="number"
+                          className="w-full bg-white/5 border border-white/10 focus:border-orange-500/50 rounded-2xl px-4 py-4 font-medium outline-none transition-all placeholder:text-neutral-600 text-white text-sm"
+                          placeholder="0.00"
+                          value={spending}
+                          onChange={(e) => setSpending(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase tracking-[0.15em] text-neutral-500 mb-2 ml-1">货币</label>
+                        <select
+                          className="w-full bg-[#1e1f28] border border-white/10 focus:border-orange-500/50 rounded-2xl px-4 py-4 font-medium outline-none transition-all text-white text-sm cursor-pointer"
+                          value={currency}
+                          onChange={(e) => setCurrency(e.target.value)}
+                        >
+                          <option value="CNY">人民币 (¥)</option>
+                          <option value="USD">美元 ($)</option>
+                          <option value="JPY">日元 (¥)</option>
+                          <option value="EUR">欧元 (€)</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase tracking-[0.15em] text-neutral-500 mb-2 ml-1">GPS 纬度</label>
+                        <input
+                          type="text"
+                          className="w-full bg-white/5 border border-white/10 focus:border-orange-500/50 rounded-2xl px-4 py-4 font-medium outline-none transition-all placeholder:text-neutral-600 text-white text-sm"
+                          value={latitude}
+                          onChange={(e) => setLatitude(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase tracking-[0.15em] text-neutral-500 mb-2 ml-1">GPS 经度</label>
+                        <input
+                          type="text"
+                          className="w-full bg-white/5 border border-white/10 focus:border-orange-500/50 rounded-2xl px-4 py-4 font-medium outline-none transition-all placeholder:text-neutral-600 text-white text-sm"
+                          value={longitude}
+                          onChange={(e) => setLongitude(e.target.value)}
+                        />
                       </div>
                     </div>
                   </div>
 
-                  {/* Right Column */}
+                  {/* Right Column: Content */}
                   <div className="space-y-6">
                     <div>
-                      <label className="block text-[10px] font-bold uppercase tracking-[0.15em] text-neutral-500 mb-2 ml-1">评价</label>
-                      <div className="flex gap-2 p-3 bg-white/5 rounded-2xl border border-white/10 w-fit">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <button
-                            key={star}
-                            type="button"
-                            onClick={() => setRate(star)}
-                            className="focus:outline-none transition-transform active:scale-90"
-                          >
-                            <Star 
-                              size={20} 
-                              className={star <= rate ? "fill-yellow-400 text-yellow-400" : "text-neutral-700"} 
-                            />
-                          </button>
-                        ))}
-                      </div>
+                      <label className="block text-[10px] font-bold uppercase tracking-[0.15em] text-neutral-500 mb-2 ml-1">标签 (用逗号隔开)</label>
+                      <input
+                        type="text"
+                        className="w-full bg-white/5 border border-white/10 focus:border-orange-500/50 rounded-2xl px-5 py-4 font-medium outline-none transition-all placeholder:text-neutral-600 focus:ring-1 focus:ring-orange-500/10 text-white text-sm"
+                        placeholder="美食, 拍照, 艺术..."
+                        value={tags}
+                        onChange={(e) => setTags(e.target.value)}
+                      />
                     </div>
-
                     <div>
                       <label className="block text-[10px] font-bold uppercase tracking-[0.15em] text-neutral-500 mb-2 ml-1">笔记 / 日记</label>
                       <textarea
                         value={notes}
                         onChange={(e) => setNotes(e.target.value)}
                         placeholder="记录一下此刻的回忆..."
-                        rows={5}
-                        className="w-full bg-white/5 border border-white/10 focus:border-blue-500/50 rounded-2xl px-5 py-4 font-medium outline-none transition-all placeholder:text-neutral-600 focus:ring-1 focus:ring-blue-500/10 text-white resize-none text-sm custom-scrollbar"
+                        className="w-full h-[155px] bg-white/5 border border-white/10 focus:border-orange-500/50 rounded-2xl px-5 py-4 font-medium outline-none transition-all placeholder:text-neutral-600 focus:ring-1 focus:ring-orange-500/10 text-white resize-none text-sm custom-scrollbar"
                       />
                     </div>
                   </div>
@@ -187,7 +260,7 @@ export function CreateEventModal({ isOpen, onClose, photos, onCreate }) {
                   <button
                     type="submit"
                     disabled={!title}
-                    className="flex-[2] px-6 py-4 rounded-2xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed font-bold transition-all shadow-xl shadow-blue-900/20 text-white"
+                    className="flex-[2] px-6 py-4 rounded-2xl bg-orange-600 hover:bg-orange-500 disabled:opacity-50 disabled:cursor-not-allowed font-bold transition-all shadow-xl shadow-orange-900/20 text-white"
                   >
                     确认创建
                   </button>
@@ -197,5 +270,18 @@ export function CreateEventModal({ isOpen, onClose, photos, onCreate }) {
         </motion.div>
       </div>
     </AnimatePresence>
+  );
+}
+
+function PhotoThumbnail({ handle }) {
+  const url = useObjectUrl(handle);
+  return (
+    <div className="w-full h-full bg-neutral-800 flex items-center justify-center overflow-hidden">
+      {url ? (
+        <img src={url} alt="" className="w-full h-full object-cover opacity-50" />
+      ) : (
+        <div className="w-4 h-4 border-2 border-white/10 border-t-white/30 rounded-full animate-spin" />
+      )}
+    </div>
   );
 }

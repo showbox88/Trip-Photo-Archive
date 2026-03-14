@@ -2,7 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { PlusCircle, Info, Trash2, Tag, Move, Layers, ChevronRight, Briefcase } from 'lucide-react';
 import { useState } from 'react';
 
-export function ContextMenu({ menu, onClose, onAction, selectionCount, trips = [] }) {
+export function ContextMenu({ menu, onClose, onAction, selectionCount, trips = [], events = [] }) {
   const [activeSubmenu, setActiveSubmenu] = useState(null);
 
   if (!menu) return null;
@@ -34,13 +34,57 @@ export function ContextMenu({ menu, onClose, onAction, selectionCount, trips = [
       
       {/* Photo Actions */}
       {targetType === 'photo' && (
-        <button
-          onClick={() => handleAction('create-event')}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 transition-all group text-blue-400"
-        >
-          <PlusCircle size={18} className="group-hover:scale-110 transition-transform" />
-          <span className="text-sm font-medium text-neutral-200 group-hover:text-white">聚集到新事件</span>
-        </button>
+        <>
+          <button
+            onClick={() => handleAction('create-event')}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 transition-all group text-orange-400"
+          >
+            <PlusCircle size={18} className="group-hover:scale-110 transition-transform" />
+            <span className="text-sm font-medium text-neutral-200 group-hover:text-white">聚集到新事件</span>
+          </button>
+
+          <div className="relative">
+            <button
+              onMouseEnter={() => setActiveSubmenu('events')}
+              className="w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 transition-all group text-orange-400"
+            >
+              <div className="flex items-center gap-3">
+                <Tag size={18} className="group-hover:scale-110 transition-transform" />
+                <span className="text-sm font-medium text-neutral-200 group-hover:text-white">添加到已有事件</span>
+              </div>
+              <ChevronRight size={14} className="text-neutral-600 group-hover:text-white transition-colors" />
+            </button>
+
+            <AnimatePresence>
+              {activeSubmenu === 'events' && (
+                <motion.div
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -10 }}
+                  className="absolute left-full top-0 ml-2 min-w-[200px] bg-[#1a1b1e]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl p-2 flex flex-col gap-1 ring-1 ring-black/50"
+                >
+                  <p className="px-3 py-1.5 text-[9px] uppercase tracking-widest text-neutral-600 font-black">选择目标事件</p>
+                  {events.length === 0 ? (
+                    <p className="px-3 py-4 text-xs text-neutral-500 italic">暂无已有事件</p>
+                  ) : (
+                    <div className="max-h-[300px] overflow-y-auto custom-scrollbar">
+                      {events.map(event => (
+                        <button
+                          key={event.event_id}
+                          onClick={() => handleAction('assign-to-event', { eventId: event.event_id, title: event.title })}
+                          className="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-orange-500/20 transition-all group text-left"
+                        >
+                          <Tag size={14} className="text-orange-400/50 group-hover:text-orange-400" />
+                          <span className="text-xs font-medium text-neutral-300 group-hover:text-white truncate">{event.title}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </>
       )}
 
       {/* Event Actions: Archiving */}

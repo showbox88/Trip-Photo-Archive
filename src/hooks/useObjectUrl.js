@@ -8,23 +8,39 @@ export function useObjectUrl(fileHandle) {
   const [url, setUrl] = useState(null);
   
   useEffect(() => {
+    let isCancelled = false;
     let objectUrl = null;
-
+    
     async function generateUrl() {
-      if (!fileHandle) return;
+      if (!fileHandle) {
+        setUrl(null);
+        return;
+      }
+      
       try {
-        const file = await fileHandle.getFile(); // Read actual Blob
-        objectUrl = URL.createObjectURL(file);
+        const file = await fileHandle.getFile();
+        if (isCancelled) return;
+        
+        const freshUrl = URL.createObjectURL(file);
+        if (isCancelled) {
+          URL.revokeObjectURL(freshUrl);
+          return;
+        }
+        
+        objectUrl = freshUrl;
         setUrl(objectUrl);
       } catch (err) {
-        console.error('Failed to generate Object URL:', err);
+        if (!isCancelled) {
+          console.error('Failed to generate Object URL:', err);
+          setUrl(null);
+        }
       }
     }
-
+    
     generateUrl();
-
-    // Cleanup object URL when the component unmounts
+    
     return () => {
+      isCancelled = true;
       if (objectUrl) {
         URL.revokeObjectURL(objectUrl);
       }

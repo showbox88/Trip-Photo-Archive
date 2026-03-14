@@ -1,25 +1,25 @@
 import { motion } from 'framer-motion';
 import { useObjectUrl } from '../hooks/useObjectUrl';
-import { MoreVertical, Image } from 'lucide-react';
+import { Image, MoreVertical, Calendar, Heart } from 'lucide-react';
+import { format } from 'date-fns';
 import clsx from 'clsx';
 
-/**
- * Renders a single photo with Framer Motion animations
- * and lazy-loading of Blob URLs using the file handle.
- */
-export function PhotoCard({ fileInfo, index, onContextMenu, isSelected, onToggleSelection, onNavigate }) {
-  // `useObjectUrl` only generates the Blob URL if this component is rendered.
-  // This saves immense memory across 6000 photos.
+export function PhotoCard({ fileInfo, index, onContextMenu, isSelected, onToggleSelection, onNavigate, onUpdate }) {
   const imgUrl = useObjectUrl(fileInfo.handle);
+  const date = fileInfo.timestamp ? new Date(fileInfo.timestamp) : null;
+  const rating = fileInfo.rating ?? 0;
+  
+  // 提取简单的文件名作为标题（移除扩展名）
+  const displayTitle = fileInfo.name.replace(/\.[^/.]+$/, "");
 
   return (
     <motion.div
-      // A gentle stagger effect during the initial 'Gathering' layout animation
+      layout
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ 
-        delay: index * 0.02, 
-        duration: 0.5,
+        delay: index * 0.01, 
+        duration: 0.4,
         ease: "easeOut"
       }}
       onContextMenu={(e) => onContextMenu(e, fileInfo)}
@@ -31,36 +31,18 @@ export function PhotoCard({ fileInfo, index, onContextMenu, isSelected, onToggle
         e.stopPropagation();
         onNavigate({ type: 'photo', data: fileInfo });
       }}
-      whileHover={{ 
-        scale: 1.02, 
-        zIndex: 10,
-      }}
       whileTap={{ scale: 0.98 }}
+      data-item-key={fileInfo.path}
       className={clsx(
-        "relative aspect-[3/2] rounded-[1.5rem] overflow-hidden bg-[#1a1b1e] transition-all cursor-pointer group",
-        isSelected ? "p-1.5 bg-blue-600" : "hover:shadow-[0_20px_40px_rgba(0,0,0,0.4)]"
+        "relative flex flex-col cursor-pointer group rounded-xl overflow-visible",
+        "bg-[#191a21] border border-white/5 shadow-lg transition-all duration-300",
+        isSelected 
+          ? "ring-4 ring-blue-500/50 shadow-[0_0_30px_rgba(59,130,246,0.4)]" 
+          : "hover:border-blue-500/30 hover:shadow-[0_0_40px_rgba(59,130,246,0.3)] hover:bg-[#1e1f28]"
       )}
     >
-      <div className={clsx(
-        "relative w-full h-full overflow-hidden",
-        isSelected ? "rounded-[1.2rem]" : "rounded-[1.5rem]"
-      )}>
-        {/* Selection Checkbox (Top Right - Matching Screenshot) */}
-        <div className={clsx(
-          "absolute top-3 right-3 z-30 w-6 h-6 rounded-full flex items-center justify-center transition-all shadow-lg",
-          isSelected 
-            ? "bg-blue-500 scale-100" 
-            : "bg-black/20 backdrop-blur-md border border-white/20 opacity-0 group-hover:opacity-100 scale-90"
-        )}>
-          {isSelected && (
-            <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}>
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                <path d="M2.5 6L5 8.5L9.5 3.5" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </motion.div>
-          )}
-        </div>
-
+      {/* ── Cover photo ── */}
+      <div className="relative w-full aspect-[3/2] overflow-hidden rounded-t-xl shrink-0">
         {imgUrl ? (
           <img 
             src={imgUrl} 
@@ -72,11 +54,81 @@ export function PhotoCard({ fileInfo, index, onContextMenu, isSelected, onToggle
             loading="lazy"
           />
         ) : (
-          <div className="w-full h-full animate-pulse bg-white/5" />
+          <div className="w-full h-full bg-neutral-900 flex items-center justify-center">
+            <Image className="text-neutral-700" size={28} />
+          </div>
         )}
-        
-        {/* Subtle Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+
+        {/* Selection Checkbox */}
+        <div className={clsx(
+          "absolute top-2 right-2 z-40 w-4 h-4 rounded-full border flex items-center justify-center transition-all duration-300",
+          isSelected
+            ? "bg-blue-500 border-blue-400 scale-110 shadow-[0_0_10px_rgba(59,130,246,0.5)]"
+            : "bg-black/40 border-white/20 opacity-0 group-hover:opacity-100 backdrop-blur-md"
+        )}>
+          {isSelected && (
+            <svg width="8" height="8" viewBox="0 0 12 12" fill="none">
+              <path d="M2.5 6L5 8.5L9.5 3.5" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          )}
+        </div>
+      </div>
+
+      {/* ── Metadata body ── */}
+      <div className="p-2.5 flex flex-col gap-1 relative">
+        {/* Top Row: Memory Tag & Rating */}
+        <div className="flex items-center justify-between">
+          <div className="flex flex-wrap gap-1">
+            <span className="rounded px-1.5 py-0.5 text-[9px] font-semibold whitespace-nowrap bg-blue-500/20 text-blue-400">
+              Memory
+            </span>
+          </div>
+          <div className="flex items-center gap-0.5">
+            {[...Array(10)].map((_, i) => {
+              const active = i < rating;
+              return (
+                <button
+                  key={i}
+                  title={`${i + 1}/10`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const newRating = i + 1;
+                    onUpdate?.(fileInfo.path, { rating: newRating }, 'photo');
+                  }}
+                  className={clsx(
+                    "transition-all hover:scale-125 active:scale-95",
+                    active ? "text-red-500" : "text-white/20 hover:text-white/40"
+                  )}
+                >
+                  {active ? (
+                    <Heart size={10} fill="currentColor" strokeWidth={0} />
+                  ) : (
+                    <Heart size={10} strokeWidth={2} />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Title */}
+        <h3 className="text-white text-[11px] font-bold truncate mt-1">{displayTitle}</h3>
+
+        {/* Date */}
+        <div className="flex items-center gap-1.5 mt-0.5">
+          <span className="text-[9px] text-neutral-500">
+            {date ? format(date, 'MMM d, yyyy') : 'Unknown Date'}
+          </span>
+        </div>
+
+        {/* Badge area */}
+        <div className="flex items-center justify-between mt-1">
+          <div className="flex items-center gap-1.5 px-1.5 py-0.5 rounded-md bg-blue-500/10 border border-blue-500/20 text-blue-400">
+            <Image size={10} strokeWidth={2.5} />
+            <span className="text-[8px] font-black uppercase tracking-wider">Photo</span>
+          </div>
+          <span className="text-[8px] text-white/10 font-mono italic">#{index + 1}</span>
+        </div>
       </div>
     </motion.div>
   );

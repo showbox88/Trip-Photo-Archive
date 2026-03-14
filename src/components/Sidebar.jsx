@@ -28,13 +28,13 @@ export function Sidebar({ dbContent, activeFilter, onFilterChange }) {
       )}
     >
       <div className="flex items-center gap-3">
-        <Icon size={18} className={clsx(isActive ? "text-blue-400" : colorClass)} />
+        <Icon size={18} className={clsx(isActive ? (label === "All Memories" || label === "Recent" || label === "Favorites" ? "text-blue-400" : colorClass) : colorClass)} />
         <span className="text-sm font-medium">{label}</span>
       </div>
       {count !== undefined && (
         <span className={clsx(
           "text-[10px] px-2 py-0.5 rounded-full font-bold",
-          isActive ? "bg-blue-500/20 text-blue-400" : "bg-white/5 text-neutral-600"
+          isActive ? (colorClass.includes("orange") ? "bg-orange-500/20 text-orange-400" : colorClass.includes("purple") ? "bg-purple-500/20 text-purple-400" : "bg-blue-500/20 text-blue-400") : "bg-white/5 text-neutral-600"
         )}>
           {count}
         </span>
@@ -117,7 +117,7 @@ export function Sidebar({ dbContent, activeFilter, onFilterChange }) {
                   label={event.title}
                   isActive={activeFilter.type === 'event' && activeFilter.id === event.event_id}
                   onClick={() => onFilterChange({ type: 'event', id: event.event_id })}
-                  colorClass="text-emerald-400"
+                  colorClass="text-orange-400"
                 />
               ))
             )}

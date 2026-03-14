@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FolderOpen, Settings, ListFilter, Play, LayoutGrid, AlignJustify, 
@@ -12,6 +12,7 @@ import { VirtualGrid } from './components/VirtualGrid';
 import { ContextMenu } from './components/ContextMenu';
 import { CreateEventModal } from './components/CreateEventModal';
 import { CreateTripModal } from './components/CreateTripModal';
+import { DetailModal } from './components/DetailModal';
 import { Sidebar } from './components/Sidebar';
 import { Lightbox } from './components/Lightbox';
 import { ActionBar } from './components/ActionBar';
@@ -32,7 +33,19 @@ function NavLink({ label, active, onClick }) {
 }
 
 function App() {
-  const { initWorkspace, isScanning, photoFiles, error, dbHandle, dbContent, saveToDatabase } = useFileSystemAccess();
+  const { 
+    initWorkspace, 
+    restoreWorkspace,
+    checkPersistedWorkspace,
+    hasPersistedHandle,
+    isScanning, 
+    photoFiles, 
+    error, 
+    dbHandle, 
+    dbContent, 
+    saveToDatabase 
+  } = useFileSystemAccess();
+  
   const { contextMenu, handleContextMenu, closeMenu } = useContextMenu();
 
   // Create a fast lookup map for DB records by path/filename
@@ -52,61 +65,79 @@ function App() {
     });
   }, [photoFiles, dbPhotoMap]);
 
-  // Mode: 'home' | 'gallery'
   const [appMode, setAppMode] = useState('home');
-  const [viewMode, setViewMode] = useState('gallery'); // 'gallery' | 'table'
+  const [activeFilter, setActiveFilter] = useState({ type: 'all' });
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [toast, setToast] = useState(null);
+  const [activePhotos, setActivePhotos] = useState([]);
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
   const [isTripModalOpen, setIsTripModalOpen] = useState(false);
-  const [activePhotos, setActivePhotos] = useState([]);
-  const [selectedIds, setSelectedIds] = useState(new Set());
-  const [activeFilter, setActiveFilter] = useState({ type: 'all' });
-  
-  // Lightbox State
+  const [detailItem, setDetailItem] = useState(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
-  const [lightboxInitialIndex, setLightboxInitialIndex] = useState(0);
   const [lightboxPhotos, setLightboxPhotos] = useState([]);
+  const [lightboxInitialIndex, setLightboxInitialIndex] = useState(0);
+  const [viewMode, setViewMode] = useState('gallery'); // 'gallery' | 'table'
 
-  // Toast State
-  const [toast, setToast] = useState(null);
+  useEffect(() => {
+    checkPersistedWorkspace();
+  }, [checkPersistedWorkspace]);
+
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
   };
 
   const handleInitialize = async () => {
-    await initWorkspace();
+    if (hasPersistedHandle) {
+      await restoreWorkspace();
+    } else {
+      await initWorkspace();
+    }
     if (!error) {
        setAppMode('gallery');
     }
   };
-  // Handler for direct Trip metadata updates (inline editing)
-  const handleUpdateTrip = async (tripId, updates) => {
-    // Intercept placeholder click
-    if (tripId === 'NEW_POP_MODAL') {
-      setIsTripModalOpen(true);
-      return;
+  // Handler for all metadata updates (inline/detail modal)
+  const handleUpdateItem = async (id, updates, typeOverride) => {
+    // Determine type from id or override
+    let itemType = typeOverride;
+    if (!itemType) {
+      if (typeof id === 'string' && id.includes('\\')) itemType = 'photo';
+      else if (dbContent.trips.find(t => String(t.trip_id) === String(id))) itemType = 'trip';
+      else itemType = 'event';
     }
 
-    const newDbContent = {
-      ...dbContent,
-      trips: dbContent.trips.map(t => 
-        String(t.trip_id) === String(tripId) ? { ...t, ...updates } : t
-      )
-    };
-    
-    // Persist to database (saveToDatabase already calls setDbContent internally)
+    const newDbContent = { ...dbContent };
+
+    if (itemType === 'trip') {
+      newDbContent.trips = dbContent.trips.map(t => 
+        String(t.trip_id) === String(id) ? { ...t, ...updates } : t
+      );
+    } else if (itemType === 'event') {
+      newDbContent.events = dbContent.events.map(e => 
+        String(e.event_id) === String(id) ? { ...e, ...updates } : e
+      );
+    } else if (itemType === 'photo') {
+      newDbContent.photos = dbContent.photos.map(p => 
+        p.file_name === id ? { ...p, ...updates } : p
+      );
+    }
+
     await saveToDatabase(newDbContent);
-    
-    setToast({
-      message: `Updated trip info`,
-      type: 'purple',
-      visible: true
-    });
+    showToast(`信息已更新`, itemType === 'trip' ? 'purple' : (itemType === 'event' ? 'orange' : 'blue'));
   };
 
-  const toggleSelection = (id) => {
+  // Deprecated: keeping for compatibility with existing components for a moment
+  const handleUpdateTrip = (id, updates) => handleUpdateItem(id, updates, 'trip');
+
+  const toggleSelection = (id, isBulk = false) => {
     setSelectedIds(prev => {
       const next = new Set(prev);
+      if (isBulk) {
+        // id is a Set or Array in bulk mode
+        return new Set(id);
+      }
       if (next.has(id)) next.delete(id);
       else next.add(id);
       return next;
@@ -132,6 +163,17 @@ function App() {
       // If none selected, use the target item
       const finalIds = selectedEventIds.length > 0 ? selectedEventIds : [targetItem.id];
       handleAssignToTrip(extraData.tripId, finalIds);
+    } else if (actionId === 'assign-to-event') {
+      const selectedPhotoPaths = Array.from(selectedIds)
+        .filter(id => !id.startsWith('event:'));
+      
+      const finalPaths = selectedPhotoPaths.length > 0 ? selectedPhotoPaths : [targetItem.path];
+      handleAssignToEvent(extraData.eventId, finalPaths);
+    } else if (actionId === 'info') {
+      const type = targetItem.type || (targetItem.path ? 'photo' : (targetItem.trip_id ? 'trip' : 'event'));
+      const data = targetItem.item || targetItem;
+      setDetailItem({ type, data });
+      setIsDetailModalOpen(true);
     }
   };
 
@@ -139,20 +181,27 @@ function App() {
     const newEventId = crypto.randomUUID();
     const newEvent = {
         event_id: newEventId,
-        trip_id: null,
-        title: eventData.title,
-        city: eventData.city,
-        category: eventData.category,
-        rate: eventData.rate,
-        notes: eventData.notes,
-        date: eventData.date,
-        total_spending: 0,
-        currency: "CNY"
+        trip_id: eventData.tripId || null,
+        title: eventData.title || "未命名事件",
+        rating: eventData.rating || 0, // 1-10
+        category: eventData.category || "未分类",
+        city: eventData.city || "",
+        date: eventData.date || new Date().toISOString().split('T')[0],
+        spending: eventData.spending || 0,
+        currency: eventData.currency || "CNY",
+        latitude: eventData.latitude || null,
+        longitude: eventData.longitude || null,
+        tags: eventData.tags || [],
+        notes: eventData.notes || ""
     };
 
     const updatedPhotos = dbContent.photos.map(p => {
         if (eventData.photoIds.includes(p.file_name)) {
-            return { ...p, event_id: newEventId };
+            return { 
+              ...p, 
+              event_id: newEventId, 
+              trip_id: eventData.tripId || p.trip_id // Sync trip_id to photo if event has it
+            };
         }
         return p;
     });
@@ -163,28 +212,52 @@ function App() {
         photos: updatedPhotos
     });
     setSelectedIds(new Set());
-    showToast(`事件 "${eventData.title}" 归类成功`, 'event');
+    showToast(`事件 "${eventData.title}" 已创建`, 'orange');
   };
 
   const handleCreateTrip = async (tripData) => {
     const newTripId = crypto.randomUUID();
+    
+    // Calculate duration
+    let duration = 0;
+    if (tripData.startDate && tripData.endDate) {
+      const start = new Date(tripData.startDate);
+      const end = new Date(tripData.endDate);
+      const diffTime = Math.abs(end - start);
+      duration = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // Inclusive
+    }
+
     const newTrip = {
       trip_id: newTripId,
-      title: tripData.title,
-      country: tripData.country,
-      start_date: tripData.startDate,
-      end_date: tripData.endDate,
-      stage: tripData.stage,
+      title: tripData.title || "未命名行程",
+      rating: tripData.rating || 0,
+      category: tripData.category || "旅行",
+      city: tripData.city || "",
+      date: tripData.startDate || new Date().toISOString().split('T')[0],
+      startDate: tripData.startDate,
+      endDate: tripData.endDate,
+      duration: duration,
+      spending: tripData.spending || 0,
+      currency: tripData.currency || "CNY",
+      latitude: tripData.latitude || null,
+      longitude: tripData.longitude || null,
+      tags: tripData.tags || [],
+      notes: tripData.notes || "",
       cover_photo_id: null
     };
 
-    // If no events selected in modal, use the global selection if they are events
-    let eventIdsToLink = tripData.eventIds;
+    // Link events to trip
+    let eventIdsToLink = tripData.eventIds || [];
     if (eventIdsToLink.length === 0) {
        eventIdsToLink = Array.from(selectedIds)
          .filter(id => id.startsWith('event:'))
          .map(id => id.replace('event:', ''));
     }
+
+    // Also link photos directly to trip if selected
+    let photoPathsToLink = Array.from(selectedIds)
+      .filter(id => !id.includes(':')) // Pure paths are photos
+      .concat(tripData.photoIds || []);
 
     const updatedEvents = dbContent.events.map(e => {
        if (eventIdsToLink.includes(e.event_id)) {
@@ -193,13 +266,22 @@ function App() {
        return e;
     });
 
+    const updatedPhotos = dbContent.photos.map(p => {
+      if (photoPathsToLink.includes(p.file_name)) {
+          return { ...p, trip_id: newTripId };
+      }
+      return p;
+    });
+
     await saveToDatabase({
       ...dbContent,
       trips: [...dbContent.trips, newTrip],
-      events: updatedEvents
+      events: updatedEvents,
+      photos: updatedPhotos
     });
+    
     setSelectedIds(new Set());
-    showToast(`开启新的篇章：${tripData.title}`, 'trip');
+    showToast(`行程 "${tripData.title}" 已开启`, 'purple');
   };
 
   const handleAssignToTrip = async (tripId, eventIds) => {
@@ -216,6 +298,23 @@ function App() {
     });
     setSelectedIds(new Set());
     showToast(`成功将事件归类到行程`, 'trip');
+  };
+
+  const handleAssignToEvent = async (eventId, photoPaths) => {
+    const updatedPhotos = dbContent.photos.map(p => {
+        if (photoPaths.includes(p.file_name)) {
+            return { ...p, event_id: eventId };
+        }
+        return p;
+    });
+
+    await saveToDatabase({
+        ...dbContent,
+        photos: updatedPhotos
+    });
+    setSelectedIds(new Set());
+    const event = dbContent.events.find(e => e.event_id === eventId);
+    showToast(`成功将照片添加到事件 "${event?.title || '未知事件'}"`, 'orange');
   };
 
   const handleResetDatabase = async () => {
@@ -278,19 +377,47 @@ function App() {
     // 1. If we are focused on a specific Trip
     if (activeFilter.type === 'trip') {
        return dbContent.events
-         .filter(e => e.trip_id === activeFilter.id)
+         .filter(e => String(e.trip_id) === String(activeFilter.id))
          .map(e => ({
             type: 'event',
             id: e.event_id,
+            event_id: e.event_id, // 冗余一份 ID 确保 CollectionCard 识别
             title: e.title,
-            photos: enrichedPhotos.filter(p => p.event_id === e.event_id)
+            item: e, // 传递原对象以获取分类、城市等信息
+            photos: enrichedPhotos.filter(p => String(p.event_id) === String(e.event_id))
          }));
     }
 
     // 2. If we are focused on a specific Event
     if (activeFilter.type === 'event') {
-       return enrichedPhotos.filter(p => p.event_id === activeFilter.id)
+       return enrichedPhotos.filter(p => String(p.event_id) === String(activeFilter.id))
          .map(p => ({ ...p, type: 'photo' }));
+    }
+
+    // 2.5 Show ALL Events (Categorized View)
+    if (activeFilter.type === 'all-events') {
+      return (dbContent.events || []).map(event => ({
+        type: 'event',
+        id: event.event_id,
+        title: event.title,
+        item: event,
+        photos: enrichedPhotos.filter(p => p.event_id === event.event_id)
+      }));
+    }
+
+    // 2.6 Show ALL Albums/Trips (Categorized View)
+    if (activeFilter.type === 'all-albums') {
+      return (dbContent.trips || []).map(trip => ({
+        type: 'trip',
+        id: trip.trip_id,
+        title: trip.title,
+        item: trip,
+        photos: enrichedPhotos.filter(p => {
+           const photoEvent = dbContent.events.find(e => String(e.event_id) === String(p.event_id));
+           return photoEvent && String(photoEvent.trip_id) === String(trip.trip_id);
+        }),
+        associatedEvents: dbContent.events.filter(e => String(e.trip_id) === String(trip.trip_id))
+      }));
     }
 
     // 3. Default "All Memories" / Archive View
@@ -399,7 +526,7 @@ function App() {
               ) : (
                 <>
                   <Play size={24} className="text-blue-400 fill-blue-400/20 group-hover:fill-blue-400 transition-colors" />
-                  Select Root Folder
+                  {hasPersistedHandle ? 'Restore Archive' : 'Select Root Folder'}
                 </>
               )}
             </motion.button>
@@ -449,8 +576,16 @@ function App() {
                       setActiveFilter({ type: 'all' });
                     }} 
                   />
-                  <NavLink label="Albums" />
-                  <NavLink label="Events" />
+                  <NavLink 
+                    label="Albums" 
+                    active={activeFilter.type === 'all-albums'}
+                    onClick={() => setActiveFilter({ type: 'all-albums' })}
+                  />
+                  <NavLink 
+                    label="Events" 
+                    active={activeFilter.type === 'all-events'}
+                    onClick={() => setActiveFilter({ type: 'all-events' })}
+                  />
                   <NavLink label="Map" />
                 </nav>
               </div>
@@ -521,11 +656,11 @@ function App() {
                   selectedIds={selectedIds}
                   onToggleSelection={toggleSelection}
                   onNavigate={handleNavigate}
-                  onUpdateTrip={handleUpdateTrip}
+                  onUpdateItem={handleUpdateItem}
                 />
 
                 <ActionBar 
-                  selectionCount={selectedIds.size}
+                  selectedIds={selectedIds}
                   onClear={() => setSelectedIds(new Set())}
                   onMerge={() => onMenuAction('create-event', { type: 'photo', path: Array.from(selectedIds)[0] })}
                   onDownload={() => showToast('Starting download...', 'trip')}
@@ -540,6 +675,7 @@ function App() {
               onAction={onMenuAction} 
               selectionCount={selectedIds.size}
               trips={dbContent.trips}
+              events={dbContent.events}
             />
 
             <CreateEventModal 
@@ -559,6 +695,19 @@ function App() {
                 .map(id => id.replace('event:', ''))}
               onCreate={handleCreateTrip}
               onAssign={handleAssignToTrip}
+              allPhotos={enrichedPhotos}
+            />
+
+            <DetailModal
+              isOpen={isDetailModalOpen}
+              onClose={() => {
+                setIsDetailModalOpen(false);
+                setDetailItem(null);
+              }}
+              type={detailItem?.type}
+              item={detailItem?.data}
+              allPhotos={enrichedPhotos}
+              onUpdate={handleUpdateItem}
             />
 
             <Lightbox 
@@ -579,9 +728,11 @@ function App() {
                   exit={{ y: 20, opacity: 0, scale: 0.9 }}
                   className={clsx(
                     "fixed top-24 left-1/2 -translate-x-1/2 z-[300] px-6 py-3 rounded-2xl border backdrop-blur-xl shadow-2xl flex items-center gap-3",
-                    toast.type === 'trip' 
+                    toast.type === 'trip' || toast.type === 'purple'
                       ? "bg-purple-500/10 border-purple-500/30 text-purple-400 shadow-[0_0_30px_rgba(168,85,247,0.2)]" 
-                      : "bg-emerald-500/10 border-emerald-500/30 text-emerald-400 shadow-[0_0_30px_rgba(16,185,129,0.2)]"
+                      : toast.type === 'orange' || toast.type === 'event'
+                      ? "bg-orange-500/10 border-orange-500/30 text-orange-400 shadow-[0_0_30px_rgba(249,115,22,0.2)]"
+                      : "bg-blue-500/10 border-blue-500/30 text-blue-400 shadow-[0_0_30px_rgba(59,130,246,0.2)]"
                   )}
                 >
                   <CheckCircle2 size={18} />
