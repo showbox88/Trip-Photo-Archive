@@ -62,7 +62,10 @@ function App() {
     return photoFiles.map(file => {
       // 统一路径规范化 (处理 Windows \ 与 / 的差异)
       const normalizedPath = file.path.replace(/\\/g, '/');
-      const record = (dbContent.photos || []).find(p => p.file_name.replace(/\\/g, '/') === normalizedPath) || {};
+      const record = (dbContent.photos || []).find(p => {
+        const dbPath = p.file_name.replace(/\\/g, '/');
+        return dbPath === normalizedPath;
+      }) || {};
       return { ...file, ...record, path: normalizedPath };
     });
   }, [photoFiles, dbContent.photos]);

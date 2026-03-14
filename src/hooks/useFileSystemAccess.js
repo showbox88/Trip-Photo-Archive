@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import * as idb from '../utils/idb';
+import { extractExifData } from '../utils/exifUtils';
 
 /**
  * Handle recursive directory reading using the File System Access API
@@ -93,12 +94,18 @@ export function useFileSystemAccess() {
       } catch (e) {
         dbFileHandle = await directoryHandle.getFileHandle('trip_database.json', { create: true });
         
-        // Initial sync: mark all scanned files as known photos
-        currentDb.photos = files.map(f => ({
-          photo_id: crypto.randomUUID(),
-          file_name: f.path,
-          timestamp: new Date().toISOString(),
-          event_id: null
+        // Initial sync with EXIF extraction
+        currentDb.photos = await Promise.all(files.map(async f => {
+          const exif = await extractExifData(f.handle);
+          return {
+            photo_id: crypto.randomUUID(),
+            file_name: f.path,
+            timestamp: exif.date && exif.time ? `${exif.date}T${exif.time}` : new Date().toISOString(),
+            date: exif.date || new Date().toISOString().split('T')[0],
+            latitude: exif.latitude,
+            longitude: exif.longitude,
+            event_id: null
+          };
         }));
 
         const writable = await dbFileHandle.createWritable();
@@ -155,12 +162,20 @@ export function useFileSystemAccess() {
       } catch (e) {
         // If it was deleted somehow but handle exists, recreate
         dbFileHandle = await directoryHandle.getFileHandle('trip_database.json', { create: true });
-        currentDb.photos = files.map(f => ({
-          photo_id: crypto.randomUUID(),
-          file_name: f.path,
-          timestamp: new Date().toISOString(),
-          event_id: null
+        
+        currentDb.photos = await Promise.all(files.map(async f => {
+          const exif = await extractExifData(f.handle);
+          return {
+            photo_id: crypto.randomUUID(),
+            file_name: f.path,
+            timestamp: exif.date && exif.time ? `${exif.date}T${exif.time}` : new Date().toISOString(),
+            date: exif.date || new Date().toISOString().split('T')[0],
+            latitude: exif.latitude,
+            longitude: exif.longitude,
+            event_id: null
+          };
         }));
+
         const writable = await dbFileHandle.createWritable();
         await writable.write(JSON.stringify(currentDb, null, 2));
         await writable.close();
@@ -168,6 +183,10 @@ export function useFileSystemAccess() {
       
       setDbHandle(dbFileHandle);
       setDbContent(currentDb);
+
+      // Perform incremental sync for new photos or missing EXIF
+      await syncPhotosWithExif(files, currentDb, dbFileHandle);
+
     } catch (err) {
       console.error('Failed to restore workspace:', err);
       setError(err.message || '恢复工作区失败。');
@@ -178,6 +197,70 @@ export function useFileSystemAccess() {
       }
     } finally {
       setIsScanning(false);
+    }
+  };
+
+  /**
+   * 增量同步照片的 EXIF 信息
+   */
+  const syncPhotosWithExif = async (files, currentDb, fileHandle) => {
+    let hasChanges = false;
+    const existingPaths = new Set(currentDb.photos.map(p => p.file_name.replace(/\\/g, '/')));
+    
+    // 1. 发现新照片
+    const newPhotos = files.filter(f => !existingPaths.has(f.path.replace(/\\/g, '/')));
+    
+    // 2. 检查旧照片是否缺失关键信息 (可选，暂不强制，避免大规模扫描性能问题)
+    // 但如果用户说“没有信息”，可能是之前已经扫入库但没解析。
+    const missingInfoPhotos = currentDb.photos.filter(p => !p.latitude && !p.date);
+    
+    if (newPhotos.length === 0 && missingInfoPhotos.length === 0) return;
+
+    console.log(`Syncing EXIF for ${newPhotos.length} new photos and ${missingInfoPhotos.length} existing photos...`);
+    
+    const updatedPhotos = [...currentDb.photos];
+    
+    // 处理新照片
+    for (const f of newPhotos) {
+      const exif = await extractExifData(f.handle);
+      updatedPhotos.push({
+        photo_id: crypto.randomUUID(),
+        file_name: f.path,
+        timestamp: exif.date && exif.time ? `${exif.date}T${exif.time}` : new Date().toISOString(),
+        date: exif.date || new Date().toISOString().split('T')[0],
+        latitude: exif.latitude,
+        longitude: exif.longitude,
+        event_id: null
+      });
+      hasChanges = true;
+    }
+
+    // 处理缺失信息的照片 (需要从 files 中找到对应的 handle)
+    for (const p of missingInfoPhotos) {
+      const fileMatch = files.find(f => f.path.replace(/\\/g, '/') === p.file_name.replace(/\\/g, '/'));
+      if (fileMatch) {
+         const exif = await extractExifData(fileMatch.handle);
+         const idx = updatedPhotos.findIndex(up => up.photo_id === p.photo_id);
+         if (idx !== -1) {
+           updatedPhotos[idx] = {
+             ...updatedPhotos[idx],
+             timestamp: exif.date && exif.time ? `${exif.date}T${exif.time}` : updatedPhotos[idx].timestamp,
+             date: exif.date || updatedPhotos[idx].date,
+             latitude: exif.latitude,
+             longitude: exif.longitude
+           };
+           hasChanges = true;
+         }
+      }
+    }
+
+    if (hasChanges) {
+      const newDb = { ...currentDb, photos: updatedPhotos };
+      const writable = await fileHandle.createWritable();
+      await writable.write(JSON.stringify(newDb, null, 2));
+      await writable.close();
+      setDbContent(newDb);
+      console.log('Incremental EXIF sync completed.');
     }
   };
 

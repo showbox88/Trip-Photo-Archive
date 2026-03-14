@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Plane, Briefcase, CheckCircle2, Layers, Flag, Calendar, Activity, Plus } from 'lucide-react';
+import { X, Plane, Briefcase, CheckCircle2, Layers, Flag, Calendar, Activity, Plus, Heart } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import { useObjectUrl } from '../hooks/useObjectUrl';
 import clsx from 'clsx';
@@ -112,28 +112,40 @@ export function CreateTripModal({ isOpen, onClose, events, onCreate, initialSele
               {previewPhotos.length > 0 && (
                 <div className="mb-8 flex items-center gap-8 p-5 bg-white/5 rounded-2xl border border-white/5 ring-1 ring-white/5 relative overflow-hidden">
                   <div className="flex-1 flex items-center h-20 relative px-2">
-                    <div className="flex items-center w-full relative">
+                    <div className="flex items-center w-full h-full relative">
                       {previewPhotos.map((p, idx) => {
                         const total = previewPhotos.length;
+                        const thumbWidth = 80;
+                        const maxGap = 12;
+                        const containerWidth = 600;
+                        
+                        const idealWidth = total * thumbWidth + (total - 1) * maxGap;
+                        
+                        let xOffset = 0;
+                        if (idealWidth <= containerWidth) {
+                          xOffset = idx * (thumbWidth + maxGap);
+                        } else {
+                          const step = (containerWidth - thumbWidth) / (total - 1);
+                          xOffset = idx * step;
+                        }
+
                         return (
                           <motion.div 
                             key={p.path}
-                            className="relative w-20 h-20 rounded-2xl overflow-hidden shadow-2xl border border-white/10 shrink-0 group/thumb"
-                            initial={{ x: 20, opacity: 0 }}
+                            className="absolute top-0 w-20 h-20 rounded-2xl overflow-hidden shadow-2xl border border-white/10 shrink-0 group/thumb"
+                            initial={{ x: xOffset + 40, opacity: 0 }}
                             animate={{ 
-                              x: 0, 
+                              x: xOffset, 
                               opacity: 1,
                               zIndex: idx
                             }}
                             whileHover={{ 
                               y: -8, 
                               scale: 1.1, 
-                              zIndex: 50,
+                              zIndex: 100,
                               transition: { duration: 0.2 }
                             }}
-                            style={{ 
-                              marginLeft: idx === 0 ? 0 : (total > 8 ? "-3.5rem" : total > 4 ? "-2rem" : "0.75rem"),
-                            }}
+                            style={{ left: 0 }}
                           >
                             <PhotoThumbnail 
                               handle={p.handle} 
@@ -197,18 +209,32 @@ export function CreateTripModal({ isOpen, onClose, events, onCreate, initialSele
                       </div>
                     </div>
                     <div>
-                      <label className="block text-[10px] font-bold uppercase tracking-[0.15em] text-neutral-500 mb-2 ml-1">好感度 (1-10)</label>
-                      <div className="flex items-center gap-4 bg-white/5 px-5 py-4 rounded-2xl border border-white/10">
-                        <input
-                          type="range"
-                          min="1"
-                          max="10"
-                          step="1"
-                          className="flex-1 accent-purple-500 h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer"
-                          value={rating}
-                          onChange={(e) => setRating(parseInt(e.target.value))}
-                        />
-                        <span className="text-purple-400 font-bold text-lg min-w-[2ch]">{rating}</span>
+                      <label className="block text-[10px] font-bold uppercase tracking-[0.15em] text-neutral-500 mb-2 ml-1">好感度 ({rating}/10)</label>
+                      <div className="flex items-center gap-2 bg-white/5 px-5 py-4 rounded-2xl border border-white/10">
+                        {[...Array(10)].map((_, i) => {
+                          const val = i + 1;
+                          const active = val <= rating;
+                          return (
+                            <button
+                              key={i}
+                              type="button"
+                              onClick={() => setRating(val)}
+                              className={clsx(
+                                "transition-all hover:scale-125 active:scale-95",
+                                active ? "text-red-500" : "text-white/10 hover:text-white/30"
+                              )}
+                            >
+                              {active ? (
+                                <Heart size={18} fill="currentColor" strokeWidth={0} />
+                              ) : (
+                                <Heart size={18} strokeWidth={2} />
+                              )}
+                            </button>
+                          );
+                        })}
+                        <div className="ml-auto pl-4 border-l border-white/10">
+                           <span className="text-purple-400 font-bold text-lg min-w-[2ch] tabular-nums">{rating}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
