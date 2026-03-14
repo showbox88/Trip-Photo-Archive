@@ -11,7 +11,6 @@ export function CreateEventModal({ isOpen, onClose, photos, onCreate }) {
   const [category, setCategory] = useState('Sightseeing');
   const [rate, setRate] = useState(0);
   const [notes, setNotes] = useState('');
-  const [showSuccess, setShowSuccess] = useState(false);
 
   if (!isOpen || !photos || photos.length === 0) return null;
 
@@ -28,17 +27,13 @@ export function CreateEventModal({ isOpen, onClose, photos, onCreate }) {
       photoIds: photos.map(p => p.path),
     });
     
-    setShowSuccess(true);
-    setTimeout(() => {
-      setShowSuccess(false);
-      onClose();
-      // Reset state
-      setTitle('');
-      setCity('');
-      setCategory('Sightseeing');
-      setRate(0);
-      setNotes('');
-    }, 1500);
+    // Instead of full screen block, we just close and reset
+    onClose();
+    setTitle('');
+    setCity('');
+    setCategory('Sightseeing');
+    setRate(0);
+    setNotes('');
   };
 
   return (
@@ -50,16 +45,7 @@ export function CreateEventModal({ isOpen, onClose, photos, onCreate }) {
           exit={{ opacity: 0, scale: 0.9, y: 20 }}
           className="relative w-full max-w-2xl bg-[#16171d] border border-white/10 rounded-3xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)] overflow-hidden"
         >
-          {showSuccess ? (
-            <div className="p-12 flex flex-col items-center text-center">
-              <div className="w-20 h-20 bg-emerald-500/20 rounded-full flex items-center justify-center mb-6">
-                <CheckCircle2 size={40} className="text-emerald-400" />
-              </div>
-              <h3 className="text-2xl font-bold mb-2 text-white">归类成功</h3>
-              <p className="text-neutral-400 font-medium">事件 "{title}" 已创建并关联照片</p>
-            </div>
-          ) : (
-            <div className="p-8">
+          <div className="p-8">
               <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-3">
                   <div className="p-2.5 bg-blue-500/20 rounded-xl">
@@ -208,7 +194,6 @@ export function CreateEventModal({ isOpen, onClose, photos, onCreate }) {
                 </div>
               </form>
             </div>
-          )}
         </motion.div>
       </div>
     </AnimatePresence>

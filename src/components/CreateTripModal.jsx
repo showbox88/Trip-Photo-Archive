@@ -12,7 +12,6 @@ export function CreateTripModal({ isOpen, onClose, events, onCreate, initialSele
   const [endDate, setEndDate] = useState('');
   const [stage, setStage] = useState('Completed');
   const [selectedEventIds, setSelectedEventIds] = useState(new Set(initialSelectedIds));
-  const [showSuccess, setShowSuccess] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -35,17 +34,13 @@ export function CreateTripModal({ isOpen, onClose, events, onCreate, initialSele
       eventIds: Array.from(selectedEventIds),
     });
     
-    setShowSuccess(true);
-    setTimeout(() => {
-      setShowSuccess(false);
-      onClose();
-      // Reset
-      setTitle('');
-      setCountry('');
-      setStartDate('');
-      setEndDate('');
-      setStage('Completed');
-    }, 1500);
+    onClose();
+    // Reset
+    setTitle('');
+    setCountry('');
+    setStartDate('');
+    setEndDate('');
+    setStage('Completed');
   };
 
   return (
@@ -57,16 +52,7 @@ export function CreateTripModal({ isOpen, onClose, events, onCreate, initialSele
           exit={{ opacity: 0, scale: 0.9, y: 20 }}
           className="relative w-full max-w-2xl bg-[#16171d] border border-white/10 rounded-3xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)] overflow-hidden"
         >
-          {showSuccess ? (
-            <div className="p-12 flex flex-col items-center text-center">
-              <div className="w-20 h-20 bg-purple-500/20 rounded-full flex items-center justify-center mb-6 border border-purple-500/20 shadow-[0_0_30px_rgba(139,92,246,0.1)]">
-                <Plane size={40} className="text-purple-400" />
-              </div>
-              <h3 className="text-2xl font-bold mb-2 text-white">开启新篇章</h3>
-              <p className="text-neutral-400 font-medium">"{title}" 已加入您的行程档案</p>
-            </div>
-          ) : (
-            <div className="p-8">
+          <div className="p-8">
               <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-3">
                   <div className="p-2.5 bg-purple-500/20 rounded-xl">
@@ -181,7 +167,6 @@ export function CreateTripModal({ isOpen, onClose, events, onCreate, initialSele
                 </div>
               </form>
             </div>
-          )}
         </motion.div>
       </div>
     </AnimatePresence>

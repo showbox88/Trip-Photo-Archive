@@ -16,13 +16,13 @@ export function PhotoCard({ fileInfo, index, onContextMenu, isSelected, onToggle
     <motion.div
       // A gentle stagger effect during the initial 'Gathering' layout animation
       initial={{ opacity: 0, scale: 0.8, y: 50 }}
-      animate={{ opacity: 1, scale: 1, y: 0 }}
+      animate={{ opacity: 1, scale: 0.85, y: 0 }}
       transition={{ 
         delay: index * 0.05, 
-        duration: 0.5, 
+        duration: 0.8, 
         type: "spring",
-        stiffness: 260,
-        damping: 20
+        stiffness: 150,
+        damping: 25
       }}
       onContextMenu={(e) => onContextMenu(e, fileInfo)}
       onClick={(e) => {
@@ -33,11 +33,15 @@ export function PhotoCard({ fileInfo, index, onContextMenu, isSelected, onToggle
         e.stopPropagation();
         onNavigate({ type: 'photo', data: fileInfo });
       }}
-      whileHover={{ scale: 1.02, zIndex: 10 }}
-      whileTap={{ scale: 0.98 }}
+      whileHover={{ 
+        scale: 0.88, 
+        zIndex: 10,
+        boxShadow: "0 0 25px rgba(59, 130, 246, 0.4), 0 0 50px rgba(59, 130, 246, 0.1)"
+      }}
+      whileTap={{ scale: 0.82 }}
       className={clsx(
         "relative aspect-square rounded-2xl overflow-hidden bg-white/5 shadow-2xl ring-1 transition-all cursor-pointer group",
-        isSelected ? "ring-blue-500 ring-4 scale-[0.96]" : "ring-white/10"
+        isSelected ? "ring-blue-500 ring-4" : "ring-white/10 group-hover:ring-blue-400/50"
       )}
       style={{
         // Give it the 'Visual Stacking' feel requested

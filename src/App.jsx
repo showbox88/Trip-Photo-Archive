@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FolderOpen, Settings, ListFilter, Play } from 'lucide-react';
+import { FolderOpen, Settings, ListFilter, Play, LayoutGrid, AlignJustify, SlidersHorizontal, ArrowUpDown, Search } from 'lucide-react';
 import { useFileSystemAccess } from './hooks/useFileSystemAccess';
 import { useContextMenu } from './hooks/useContextMenu';
 import { PhotoCard } from './components/PhotoCard';
@@ -10,7 +10,7 @@ import { CreateEventModal } from './components/CreateEventModal';
 import { CreateTripModal } from './components/CreateTripModal';
 import { Sidebar } from './components/Sidebar';
 import { Lightbox } from './components/Lightbox';
-import { Plane, Plus, Trash2, ChevronRight } from 'lucide-react';
+import { Plane, Plus, Trash2, ChevronRight, CheckCircle2, ChevronDown } from 'lucide-react';
 import clsx from 'clsx';
 
 function App() {
@@ -36,6 +36,7 @@ function App() {
 
   // Mode: 'home' | 'gallery'
   const [appMode, setAppMode] = useState('home');
+  const [viewMode, setViewMode] = useState('gallery'); // 'gallery' | 'table'
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
   const [isTripModalOpen, setIsTripModalOpen] = useState(false);
   const [activePhotos, setActivePhotos] = useState([]);
@@ -47,11 +48,42 @@ function App() {
   const [lightboxInitialIndex, setLightboxInitialIndex] = useState(0);
   const [lightboxPhotos, setLightboxPhotos] = useState([]);
 
+  // Toast State
+  const [toast, setToast] = useState(null);
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
   const handleInitialize = async () => {
     await initWorkspace();
     if (!error) {
        setAppMode('gallery');
     }
+  };
+  // Handler for direct Trip metadata updates (inline editing)
+  const handleUpdateTrip = async (tripId, updates) => {
+    // Intercept placeholder click
+    if (tripId === 'NEW_POP_MODAL') {
+      setIsTripModalOpen(true);
+      return;
+    }
+
+    const newDbContent = {
+      ...dbContent,
+      trips: dbContent.trips.map(t => 
+        String(t.trip_id) === String(tripId) ? { ...t, ...updates } : t
+      )
+    };
+    
+    // Persist to database (saveToDatabase already calls setDbContent internally)
+    await saveToDatabase(newDbContent);
+    
+    setToast({
+      message: `Updated trip info`,
+      type: 'purple',
+      visible: true
+    });
   };
 
   const toggleSelection = (id) => {
@@ -113,6 +145,7 @@ function App() {
         photos: updatedPhotos
     });
     setSelectedIds(new Set());
+    showToast(`事件 "${eventData.title}" 归类成功`, 'event');
   };
 
   const handleCreateTrip = async (tripData) => {
@@ -148,6 +181,7 @@ function App() {
       events: updatedEvents
     });
     setSelectedIds(new Set());
+    showToast(`开启新的篇章：${tripData.title}`, 'trip');
   };
 
   const handleAssignToTrip = async (tripId, eventIds) => {
@@ -163,6 +197,7 @@ function App() {
         events: updatedEvents
     });
     setSelectedIds(new Set());
+    showToast(`成功将事件归类到行程`, 'trip');
   };
 
   const handleResetDatabase = async () => {
@@ -250,10 +285,12 @@ function App() {
         type: 'trip',
         id: trip.trip_id,
         title: trip.title,
+        item: trip, // Full trip object
         photos: enrichedPhotos.filter(p => {
-           const event = dbContent.events.find(e => e.event_id === p.event_id);
-           return event && event.trip_id === trip.trip_id;
-        })
+           const photoEvent = dbContent.events.find(e => String(e.event_id) === String(p.event_id));
+           return photoEvent && String(photoEvent.trip_id) === String(trip.trip_id);
+        }),
+        associatedEvents: dbContent.events.filter(e => String(e.trip_id) === String(trip.trip_id))
       });
     });
 
@@ -263,6 +300,7 @@ function App() {
         type: 'event',
         id: event.event_id,
         title: event.title,
+        item: event, // Full event object
         photos: enrichedPhotos.filter(p => p.event_id === event.event_id)
       });
     });
@@ -375,52 +413,69 @@ function App() {
             transition={{ duration: 0.8 }}
             className="fixed inset-0 z-20 flex flex-col bg-black/40 backdrop-blur-3xl"
           >
-            {/* Gallery Navbar (Glassmorphism) */}
-            <header className="h-20 shrink-0 border-b border-white/5 bg-black/20 flex flex-row items-center justify-between px-8 z-50 shadow-sm backdrop-blur-3xl">
-              <div className="flex items-center gap-4">
-                <div className="p-2.5 bg-blue-500/20 rounded-xl shadow-inner border border-blue-500/20">
-                  <FolderOpen size={20} className="text-blue-400" />
-                </div>
-                <h2 className="text-xl font-semibold tracking-tight text-white/90">Memory Database</h2>
-                <div className="px-3 py-1.5 rounded-full bg-white/5 text-xs font-medium ml-4 border border-white/10 text-neutral-300">
-                   Active: {photoFiles.length} Photos
-                </div>
-                <div className="px-3 py-1.5 rounded-full bg-purple-500/10 text-xs font-medium border border-purple-500/20 text-purple-300 flex items-center gap-2">
-                   <Plane size={12} /> {dbContent.trips.length} Trips
-                </div>
+            {/* ── Notion-style top bar ── */}
+            <header className="h-12 shrink-0 border-b border-white/5 bg-[#111215] flex flex-row items-center justify-between px-4 z-50">
+              {/* Left: view toggle */}
+              <div className="flex items-center gap-1 bg-white/5 rounded-lg p-0.5">
+                <button
+                  onClick={() => setViewMode('table')}
+                  className={clsx(
+                    'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all',
+                    viewMode === 'table' ? 'bg-white/10 text-white' : 'text-neutral-500 hover:text-neutral-300'
+                  )}
+                >
+                  <AlignJustify size={13} /> Table
+                </button>
+                <button
+                  onClick={() => setViewMode('gallery')}
+                  className={clsx(
+                    'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all',
+                    viewMode === 'gallery' ? 'bg-white/10 text-white' : 'text-neutral-500 hover:text-neutral-300'
+                  )}
+                >
+                  <LayoutGrid size={13} /> Gallery
+                </button>
               </div>
-              <div className="flex items-center gap-2">
-                <button 
-                  onClick={() => setIsTripModalOpen(true)}
-                  className="px-4 py-2 bg-purple-600 hover:bg-purple-500 rounded-xl text-sm font-bold transition-all text-white flex items-center gap-2 shadow-lg shadow-purple-900/20"
-                >
-                  <Plus size={16} /> New Trip
+
+              {/* Right: filter actions + New button */}
+              <div className="flex items-center gap-1">
+                <button className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs text-neutral-500 hover:text-neutral-200 hover:bg-white/5 transition-all">
+                  <SlidersHorizontal size={13} /> Filter
                 </button>
-                <div className="w-px h-6 bg-white/10 mx-2" />
-                <button className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-sm font-medium transition-colors text-neutral-400 hover:text-white flex items-center gap-2 border border-white/5">
-                  <ListFilter size={16} /> Filters
+                <button className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs text-neutral-500 hover:text-neutral-200 hover:bg-white/5 transition-all">
+                  <ArrowUpDown size={13} /> Sort
                 </button>
-                <button 
+                <button className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs text-neutral-500 hover:text-neutral-200 hover:bg-white/5 transition-all">
+                  <Search size={13} />
+                </button>
+                <div className="w-px h-4 bg-white/10 mx-1" />
+                <button
                   onClick={handleResetDatabase}
-                  className="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded-xl text-sm font-medium transition-colors text-red-400 flex items-center gap-2"
-                  title="Clear all categorizations (Testing)"
+                  className="px-2.5 py-1.5 rounded-md text-xs text-neutral-600 hover:text-red-400 hover:bg-red-500/10 transition-all flex items-center gap-1"
+                  title="Clear DB (dev)"
                 >
-                  <Trash2 size={16} /> Clear DB
+                  <Trash2 size={12} />
                 </button>
-                <button className="p-2.5 hover:bg-white/10 rounded-xl transition-colors text-neutral-400 hover:text-white">
-                  <Settings size={20} />
+                <button
+                  onClick={() => setIsTripModalOpen(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 rounded-md text-xs font-semibold text-white transition-all shadow-lg shadow-blue-900/30"
+                >
+                  New <ChevronDown size={11} />
                 </button>
               </div>
             </header>
 
             {/* Main Layout Area */}
             <div className="flex-1 flex overflow-hidden">
-              <Sidebar 
-                dbContent={dbContent} 
-                activeFilter={activeFilter} 
-                onFilterChange={setActiveFilter} 
-              />
-              
+              {/* Sidebar: only show in table view */}
+              {viewMode === 'table' && (
+                <Sidebar
+                  dbContent={dbContent}
+                  activeFilter={activeFilter}
+                  onFilterChange={setActiveFilter}
+                />
+              )}
+
               <div className="flex-1 flex flex-col relative">
                 {/* Virtualized Infinite Grid */}
                 <VirtualGrid 
@@ -429,6 +484,7 @@ function App() {
                   selectedIds={selectedIds}
                   onToggleSelection={toggleSelection}
                   onNavigate={handleNavigate}
+                  onUpdateTrip={handleUpdateTrip}
                 />
               </div>
             </div>
@@ -468,28 +524,26 @@ function App() {
               events={dbContent.events}
             />
 
-            {/* Floating Action Bar / Status (Glassmorphism again) */}
-            <motion.div 
-               initial={{ y: 100, opacity: 0 }}
-               animate={{ y: 0, opacity: 1 }}
-               transition={{ delay: 0.5, type: "spring", damping: 25 }}
-               className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 rounded-2xl bg-[#111216]/80 backdrop-blur-2xl border border-white/10 shadow-[0_0_40px_-10px_rgba(0,0,0,0.8)] p-4 flex gap-8 items-center"
-            >
-                <div className="flex flex-col items-center px-4 border-r border-white/5">
-                   <span className="text-[10px] text-neutral-500 font-bold uppercase tracking-widest mb-1">Storage</span>
-                   <span className="text-sm font-semibold text-green-400 flex items-center gap-2 drop-shadow-[0_0_8px_rgba(74,222,128,0.5)]">
-                     <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" /> Local JSON
-                   </span>
-                </div>
-                <div className="flex flex-col items-center px-4 border-r border-white/5">
-                   <span className="text-[10px] text-neutral-500 font-bold uppercase tracking-widest mb-1">Status</span>
-                   <span className="text-sm font-semibold text-neutral-300">Up to Date</span>
-                </div>
-                <div className="flex flex-col items-center px-4">
-                   <span className="text-[10px] text-neutral-500 font-bold uppercase tracking-widest mb-1">Total</span>
-                   <span className="text-sm font-semibold text-white">{photoFiles.length} Images</span>
-                </div>
-            </motion.div>
+
+            {/* Global Toast (Glow Style) - Fixed Insertion */}
+            <AnimatePresence>
+              {toast && (
+                <motion.div
+                  initial={{ y: 50, opacity: 0, scale: 0.9 }}
+                  animate={{ y: 0, opacity: 1, scale: 1 }}
+                  exit={{ y: 20, opacity: 0, scale: 0.9 }}
+                  className={clsx(
+                    "fixed top-24 left-1/2 -translate-x-1/2 z-[300] px-6 py-3 rounded-2xl border backdrop-blur-xl shadow-2xl flex items-center gap-3",
+                    toast.type === 'trip' 
+                      ? "bg-purple-500/10 border-purple-500/30 text-purple-400 shadow-[0_0_30px_rgba(168,85,247,0.2)]" 
+                      : "bg-emerald-500/10 border-emerald-500/30 text-emerald-400 shadow-[0_0_30px_rgba(16,185,129,0.2)]"
+                  )}
+                >
+                  <CheckCircle2 size={18} />
+                  <span className="text-sm font-bold tracking-tight">{toast.message}</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
           </motion.div>
         )}
