@@ -118,7 +118,7 @@ export function CreateTripModal({ isOpen, onClose, events, onCreate, initialSele
                         return (
                           <motion.div 
                             key={p.path}
-                            className="relative w-16 h-16 rounded-xl overflow-hidden shadow-2xl border border-white/10 shrink-0 group/thumb"
+                            className="relative w-20 h-20 rounded-2xl overflow-hidden shadow-2xl border border-white/10 shrink-0 group/thumb"
                             initial={{ x: 20, opacity: 0 }}
                             animate={{ 
                               x: 0, 
@@ -132,7 +132,7 @@ export function CreateTripModal({ isOpen, onClose, events, onCreate, initialSele
                               transition: { duration: 0.2 }
                             }}
                             style={{ 
-                              marginLeft: idx === 0 ? 0 : (total > 8 ? "-2.5rem" : total > 4 ? "-1.5rem" : "0.5rem"),
+                              marginLeft: idx === 0 ? 0 : (total > 8 ? "-3.5rem" : total > 4 ? "-2rem" : "0.75rem"),
                             }}
                           >
                             <PhotoThumbnail 
