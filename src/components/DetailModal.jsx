@@ -51,6 +51,7 @@ export function DetailModal({ isOpen, onClose, type, item, allPhotos = [], onUpd
         city: item.city || '',
         startDate: item.startDate || item.date || '',
         endDate: item.endDate || '',
+        time: item.time || '',
         spending: item.spending ?? 0,
         currency: item.currency || 'CNY',
         latitude: item.latitude || '',
@@ -225,27 +226,49 @@ export function DetailModal({ isOpen, onClose, type, item, allPhotos = [], onUpd
                 </div>
               </div>
 
-              {/* Middle Column: Logistics */}
+              {/* Middle Column: Logistics & Meta */}
               <div className="space-y-6">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-500 mb-2 ml-1">{isTrip ? '开始日期' : '发生日期'}</label>
-                    <input
-                      type="date"
-                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-4 text-sm font-bold text-white outline-none [color-scheme:dark]"
-                      value={formData.startDate || ''}
-                      onChange={(e) => handleChange('startDate', e.target.value)}
-                    />
-                  </div>
-                  {isTrip && (
-                    <div>
-                      <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-500 mb-2 ml-1">结束日期</label>
+                    <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-500 mb-2 ml-1">
+                      {isTrip ? '开始日期' : '发生日期'}
+                    </label>
+                    <div className="relative">
+                      <Calendar size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 pointer-events-none" />
                       <input
                         type="date"
-                        className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-4 text-sm font-bold text-white outline-none [color-scheme:dark]"
-                        value={formData.endDate || ''}
-                        onChange={(e) => handleChange('endDate', e.target.value)}
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl pl-10 pr-4 py-4 text-sm font-bold text-white outline-none [color-scheme:dark] focus:border-white/20"
+                        value={formData.startDate || ''}
+                        onChange={(e) => handleChange('startDate', e.target.value)}
                       />
+                    </div>
+                  </div>
+                  {isTrip ? (
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-500 mb-2 ml-1">结束日期</label>
+                      <div className="relative">
+                        <Calendar size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 pointer-events-none" />
+                        <input
+                          type="date"
+                          className="w-full bg-white/5 border border-white/10 rounded-2xl pl-10 pr-4 py-4 text-sm font-bold text-white outline-none [color-scheme:dark] focus:border-white/20"
+                          value={formData.endDate || ''}
+                          onChange={(e) => handleChange('endDate', e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-500 mb-2 ml-1">拍摄时间</label>
+                      <div className="relative">
+                        <Clock size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 pointer-events-none" />
+                        <input
+                          type="time"
+                          step="1"
+                          className="w-full bg-white/5 border border-white/10 rounded-2xl pl-10 pr-4 py-4 text-sm font-bold text-white outline-none [color-scheme:dark] focus:border-white/20"
+                          value={formData.time || ''}
+                          onChange={(e) => handleChange('time', e.target.value)}
+                        />
+                      </div>
                     </div>
                   )}
                 </div>
@@ -257,7 +280,7 @@ export function DetailModal({ isOpen, onClose, type, item, allPhotos = [], onUpd
                       <DollarSign size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500" />
                       <input
                         type="number"
-                        className="w-full bg-white/5 border border-white/10 rounded-2xl pl-10 pr-4 py-4 text-sm font-bold text-white outline-none"
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl pl-10 pr-4 py-4 text-sm font-bold text-white outline-none focus:border-white/20"
                         value={formData.spending ?? 0}
                         onChange={(e) => handleChange('spending', e.target.value)}
                       />
@@ -266,36 +289,42 @@ export function DetailModal({ isOpen, onClose, type, item, allPhotos = [], onUpd
                   <div>
                     <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-500 mb-2 ml-1">货币</label>
                     <select
-                      className="w-full bg-[#1c1d24] border border-white/10 rounded-2xl px-4 py-4 text-sm font-bold text-white outline-none appearance-none"
+                      className="w-full h-[58px] bg-[#1c1d24] border border-white/10 rounded-2xl px-4 text-sm font-bold text-white outline-none appearance-none cursor-pointer focus:border-white/20"
                       value={formData.currency || 'CNY'}
                       onChange={(e) => handleChange('currency', e.target.value)}
                     >
-                      <option value="CNY">CNY (¥)</option>
-                      <option value="USD">USD ($)</option>
-                      <option value="EUR">EUR (€)</option>
-                      <option value="JPY">JPY (¥)</option>
+                      <option value="CNY">人民币 (¥)</option>
+                      <option value="USD">美元 ($)</option>
+                      <option value="EUR">欧元 (€)</option>
+                      <option value="JPY">日元 (¥)</option>
                     </select>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-500 mb-2 ml-1">纬度 (Lat)</label>
-                    <input
-                      type="text"
-                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-4 text-xs font-bold text-white outline-none"
-                      value={formData.latitude || ''}
-                      onChange={(e) => handleChange('latitude', e.target.value)}
-                    />
+                    <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-500 mb-2 ml-1">纬度 (LAT)</label>
+                    <div className="relative">
+                      <MapPin size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500" />
+                      <input
+                        type="text"
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl pl-10 pr-4 py-4 text-[11px] font-bold text-white outline-none focus:border-white/20"
+                        value={formData.latitude || ''}
+                        onChange={(e) => handleChange('latitude', e.target.value)}
+                      />
+                    </div>
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-500 mb-2 ml-1">经度 (Lng)</label>
-                    <input
-                      type="text"
-                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-4 text-xs font-bold text-white outline-none"
-                      value={formData.longitude || ''}
-                      onChange={(e) => handleChange('longitude', e.target.value)}
-                    />
+                    <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-500 mb-2 ml-1">经度 (LNG)</label>
+                    <div className="relative">
+                      <MapPin size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500" />
+                      <input
+                        type="text"
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl pl-10 pr-4 py-4 text-[11px] font-bold text-white outline-none focus:border-white/20"
+                        value={formData.longitude || ''}
+                        onChange={(e) => handleChange('longitude', e.target.value)}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
