@@ -49,13 +49,13 @@ export function DetailModal({ isOpen, onClose, type, item, allPhotos = [], onUpd
         rating: item.rating ?? 0,
         category: item.category || '',
         city: item.city || '',
-        startDate: item.startDate || item.date || '',
+        startDate: (item.startDate || item.date || '').split('T')[0],
         endDate: item.endDate || '',
         time: item.time || '',
         spending: item.spending ?? 0,
         currency: item.currency || 'CNY',
-        latitude: item.latitude || '',
-        longitude: item.longitude || '',
+        latitude: item.latitude ?? (isPhoto ? item.latitude : ''),
+        longitude: item.longitude ?? (isPhoto ? item.longitude : ''),
         tags: Array.isArray(item.tags) ? item.tags.join(', ') : (item.tags || ''),
         notes: item.notes || ''
       });
@@ -226,101 +226,110 @@ export function DetailModal({ isOpen, onClose, type, item, allPhotos = [], onUpd
                 </div>
               </div>
 
-              {/* Middle Column: Logistics & Meta */}
+              {/* Middle Column: Meta Data */}
               <div className="space-y-6">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-500 mb-2 ml-1">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex flex-col">
+                    <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-500 mb-2 ml-1 truncate">
                       {isTrip ? '开始日期' : '发生日期'}
                     </label>
-                    <div className="relative">
-                      <Calendar size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 pointer-events-none" />
+                    <div className="relative group">
+                      <Calendar size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 group-focus-within:text-white transition-colors pointer-events-none" />
                       <input
                         type="date"
-                        className="w-full bg-white/5 border border-white/10 rounded-2xl pl-10 pr-4 py-4 text-sm font-bold text-white outline-none [color-scheme:dark] focus:border-white/20"
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl pl-10 pr-3 py-4 text-xs font-bold text-white outline-none [color-scheme:dark] focus:border-white/20 transition-all"
                         value={formData.startDate || ''}
                         onChange={(e) => handleChange('startDate', e.target.value)}
                       />
                     </div>
                   </div>
-                  {isTrip ? (
-                    <div>
-                      <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-500 mb-2 ml-1">结束日期</label>
-                      <div className="relative">
-                        <Calendar size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 pointer-events-none" />
-                        <input
-                          type="date"
-                          className="w-full bg-white/5 border border-white/10 rounded-2xl pl-10 pr-4 py-4 text-sm font-bold text-white outline-none [color-scheme:dark] focus:border-white/20"
-                          value={formData.endDate || ''}
-                          onChange={(e) => handleChange('endDate', e.target.value)}
-                        />
-                      </div>
+                  <div className="flex flex-col">
+                    <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-500 mb-2 ml-1 truncate">
+                      {isTrip ? '结束日期' : '拍摄时间'}
+                    </label>
+                    <div className="relative group">
+                      {isTrip ? (
+                         <>
+                           <Calendar size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 group-focus-within:text-white transition-colors pointer-events-none" />
+                           <input
+                             type="date"
+                             className="w-full bg-white/5 border border-white/10 rounded-2xl pl-10 pr-3 py-4 text-xs font-bold text-white outline-none [color-scheme:dark] focus:border-white/20 transition-all"
+                             value={formData.endDate || ''}
+                             onChange={(e) => handleChange('endDate', e.target.value)}
+                           />
+                         </>
+                      ) : (
+                         <>
+                           <Clock size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 group-focus-within:text-white transition-colors pointer-events-none" />
+                           <input
+                             type="time"
+                             step="1"
+                             className="w-full bg-white/5 border border-white/10 rounded-2xl pl-10 pr-3 py-4 text-xs font-bold text-white outline-none [color-scheme:dark] focus:border-white/20 transition-all"
+                             value={formData.time || ''}
+                             onChange={(e) => handleChange('time', e.target.value)}
+                           />
+                         </>
+                      )}
                     </div>
-                  ) : (
-                    <div>
-                      <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-500 mb-2 ml-1">拍摄时间</label>
-                      <div className="relative">
-                        <Clock size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 pointer-events-none" />
-                        <input
-                          type="time"
-                          step="1"
-                          className="w-full bg-white/5 border border-white/10 rounded-2xl pl-10 pr-4 py-4 text-sm font-bold text-white outline-none [color-scheme:dark] focus:border-white/20"
-                          value={formData.time || ''}
-                          onChange={(e) => handleChange('time', e.target.value)}
-                        />
-                      </div>
-                    </div>
-                  )}
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex flex-col">
                     <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-500 mb-2 ml-1">消费金额</label>
-                    <div className="relative">
-                      <DollarSign size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500" />
+                    <div className="relative group">
+                      <DollarSign size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 group-focus-within:text-white transition-colors pointer-events-none" />
                       <input
                         type="number"
-                        className="w-full bg-white/5 border border-white/10 rounded-2xl pl-10 pr-4 py-4 text-sm font-bold text-white outline-none focus:border-white/20"
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl pl-10 pr-4 py-4 text-sm font-bold text-white outline-none focus:border-white/20 transition-all"
                         value={formData.spending ?? 0}
                         onChange={(e) => handleChange('spending', e.target.value)}
                       />
                     </div>
                   </div>
-                  <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-500 mb-2 ml-1">货币</label>
-                    <select
-                      className="w-full h-[58px] bg-[#1c1d24] border border-white/10 rounded-2xl px-4 text-sm font-bold text-white outline-none appearance-none cursor-pointer focus:border-white/20"
-                      value={formData.currency || 'CNY'}
-                      onChange={(e) => handleChange('currency', e.target.value)}
-                    >
-                      <option value="CNY">人民币 (¥)</option>
-                      <option value="USD">美元 ($)</option>
-                      <option value="EUR">欧元 (€)</option>
-                      <option value="JPY">日元 (¥)</option>
-                    </select>
+                  <div className="flex flex-col">
+                    <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-500 mb-2 ml-1">货币选择</label>
+                    <div className="relative group">
+                      <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
+                         <span className="text-xs font-bold text-neutral-500 group-focus-within:text-white transition-colors">$</span>
+                      </div>
+                      <select
+                        className="w-full h-[58px] bg-[#1c1d24] border border-white/10 rounded-2xl pl-10 pr-4 text-xs font-bold text-white outline-none appearance-none cursor-pointer focus:border-white/20 transition-all"
+                        value={formData.currency || 'CNY'}
+                        onChange={(e) => handleChange('currency', e.target.value)}
+                      >
+                        <option value="CNY">人民币 (CNY)</option>
+                        <option value="USD">美元 (USD)</option>
+                        <option value="EUR">欧元 (EUR)</option>
+                        <option value="JPY">日元 (JPY)</option>
+                      </select>
+                      <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-500 pointer-events-none" />
+                    </div>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-500 mb-2 ml-1">纬度 (LAT)</label>
-                    <div className="relative">
-                      <MapPin size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500" />
+                <div className="grid grid-cols-2 gap-3 text-neutral-400">
+                  <div className="flex flex-col">
+                    <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-500 mb-2 ml-1">坐标 (LAT)</label>
+                    <div className="relative group">
+                      <MapPin size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 group-focus-within:text-white transition-colors" />
                       <input
                         type="text"
-                        className="w-full bg-white/5 border border-white/10 rounded-2xl pl-10 pr-4 py-4 text-[11px] font-bold text-white outline-none focus:border-white/20"
+                        placeholder="0.0000"
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl pl-10 pr-4 py-4 text-[11px] font-bold text-white outline-none focus:border-white/20 transition-all bg-transparent"
                         value={formData.latitude || ''}
                         onChange={(e) => handleChange('latitude', e.target.value)}
                       />
                     </div>
                   </div>
-                  <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-500 mb-2 ml-1">经度 (LNG)</label>
-                    <div className="relative">
-                      <MapPin size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500" />
+                  <div className="flex flex-col">
+                    <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-500 mb-2 ml-1">坐标 (LNG)</label>
+                    <div className="relative group">
+                      <MapPin size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 group-focus-within:text-white transition-colors" />
                       <input
                         type="text"
-                        className="w-full bg-white/5 border border-white/10 rounded-2xl pl-10 pr-4 py-4 text-[11px] font-bold text-white outline-none focus:border-white/20"
+                        placeholder="0.0000"
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl pl-10 pr-4 py-4 text-[11px] font-bold text-white outline-none focus:border-white/20 transition-all bg-transparent"
                         value={formData.longitude || ''}
                         onChange={(e) => handleChange('longitude', e.target.value)}
                       />
