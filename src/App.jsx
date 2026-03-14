@@ -1,6 +1,10 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FolderOpen, Settings, ListFilter, Play, LayoutGrid, AlignJustify, SlidersHorizontal, ArrowUpDown, Search } from 'lucide-react';
+import { 
+  FolderOpen, Settings, ListFilter, Play, LayoutGrid, AlignJustify, 
+  SlidersHorizontal, ArrowUpDown, Search, Plane, Plus, Trash2, 
+  ChevronRight, CheckCircle2, ChevronDown, Archive, Calendar 
+} from 'lucide-react';
 import { useFileSystemAccess } from './hooks/useFileSystemAccess';
 import { useContextMenu } from './hooks/useContextMenu';
 import { PhotoCard } from './components/PhotoCard';
@@ -10,8 +14,22 @@ import { CreateEventModal } from './components/CreateEventModal';
 import { CreateTripModal } from './components/CreateTripModal';
 import { Sidebar } from './components/Sidebar';
 import { Lightbox } from './components/Lightbox';
-import { Plane, Plus, Trash2, ChevronRight, CheckCircle2, ChevronDown } from 'lucide-react';
+import { ActionBar } from './components/ActionBar';
 import clsx from 'clsx';
+
+function NavLink({ label, active, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      className={clsx(
+        "text-sm font-bold transition-colors cursor-pointer",
+        active ? "text-white" : "text-neutral-500 hover:text-neutral-300"
+      )}
+    >
+      {label}
+    </button>
+  );
+}
 
 function App() {
   const { initWorkspace, isScanning, photoFiles, error, dbHandle, dbContent, saveToDatabase } = useFileSystemAccess();
@@ -413,57 +431,76 @@ function App() {
             transition={{ duration: 0.8 }}
             className="fixed inset-0 z-20 flex flex-col bg-black/40 backdrop-blur-3xl"
           >
-            {/* ── Notion-style top bar ── */}
-            <header className="h-12 shrink-0 border-b border-white/5 bg-[#111215] flex flex-row items-center justify-between px-4 z-50">
-              {/* Left: view toggle */}
-              <div className="flex items-center gap-1 bg-white/5 rounded-lg p-0.5">
-                <button
-                  onClick={() => setViewMode('table')}
-                  className={clsx(
-                    'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all',
-                    viewMode === 'table' ? 'bg-white/10 text-white' : 'text-neutral-500 hover:text-neutral-300'
-                  )}
-                >
-                  <AlignJustify size={13} /> Table
-                </button>
-                <button
-                  onClick={() => setViewMode('gallery')}
-                  className={clsx(
-                    'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all',
-                    viewMode === 'gallery' ? 'bg-white/10 text-white' : 'text-neutral-500 hover:text-neutral-300'
-                  )}
-                >
-                  <LayoutGrid size={13} /> Gallery
-                </button>
+            {/* ── Design-Specific Top Header ── */}
+            <header className="w-full h-20 shrink-0 bg-[#0b1014] border-b border-white/5 flex items-center justify-between px-10 z-[100]">
+              <div className="flex items-center gap-12">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-600/20">
+                    <Archive size={20} className="text-white" />
+                  </div>
+                  <span className="text-xl font-black tracking-tight text-white">Trip Archive</span>
+                </div>
+                
+                <nav className="hidden md:flex items-center gap-8">
+                  <NavLink 
+                    label="All Photos" 
+                    active={activeFilter.type === 'all'}
+                    onClick={() => {
+                      setActiveFilter({ type: 'all' });
+                    }} 
+                  />
+                  <NavLink label="Albums" />
+                  <NavLink label="Events" />
+                  <NavLink label="Map" />
+                </nav>
               </div>
 
-              {/* Right: filter actions + New button */}
-              <div className="flex items-center gap-1">
-                <button className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs text-neutral-500 hover:text-neutral-200 hover:bg-white/5 transition-all">
-                  <SlidersHorizontal size={13} /> Filter
-                </button>
-                <button className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs text-neutral-500 hover:text-neutral-200 hover:bg-white/5 transition-all">
-                  <ArrowUpDown size={13} /> Sort
-                </button>
-                <button className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs text-neutral-500 hover:text-neutral-200 hover:bg-white/5 transition-all">
-                  <Search size={13} />
-                </button>
-                <div className="w-px h-4 bg-white/10 mx-1" />
-                <button
-                  onClick={handleResetDatabase}
-                  className="px-2.5 py-1.5 rounded-md text-xs text-neutral-600 hover:text-red-400 hover:bg-red-500/10 transition-all flex items-center gap-1"
-                  title="Clear DB (dev)"
-                >
-                  <Trash2 size={12} />
-                </button>
-                <button
-                  onClick={() => setIsTripModalOpen(true)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 rounded-md text-xs font-semibold text-white transition-all shadow-lg shadow-blue-900/30"
-                >
-                  New <ChevronDown size={11} />
-                </button>
+              <div className="flex items-center gap-6">
+                <div className="relative group">
+                  <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 group-focus-within:text-blue-400 transition-colors" />
+                  <input 
+                    type="text" 
+                    placeholder="Search your memories..." 
+                    className="w-80 h-12 pl-12 pr-4 bg-white/5 border border-white/10 rounded-2xl text-sm text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:bg-white/10 transition-all font-medium"
+                  />
+                </div>
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-neutral-400 to-neutral-600 border-2 border-white/10 p-0.5 overflow-hidden active:scale-95 transition-transform cursor-pointer shadow-lg">
+                  <img src="https://ui-avatars.com/api/?name=User&background=333&color=fff" alt="Avatar" className="w-full h-full rounded-full object-cover" />
+                </div>
               </div>
             </header>
+
+            {/* ── Design-Specific Sub Header ── */}
+            <div className="px-10 pt-12 pb-8 flex items-center justify-between">
+              <div className="space-y-2">
+                <h2 className="text-4xl font-black tracking-tight text-white">Switzerland Trip 2024</h2>
+                <div className="flex items-center gap-3 text-neutral-500 font-bold text-sm">
+                  <Calendar size={14} />
+                  <span>August 12 - August 24</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-neutral-700 mx-1" />
+                  <span>142 items</span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button 
+                  onClick={handleResetDatabase}
+                  className="flex items-center gap-2 px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-2xl text-xs font-bold text-red-400 hover:bg-red-500/20 transition-all active:scale-95"
+                  title="Clear Database"
+                >
+                  <Trash2 size={16} />
+                  Reset DB
+                </button>
+                <button className="flex items-center gap-2 px-6 py-3 bg-white/5 border border-white/10 rounded-2xl text-sm font-bold text-white hover:bg-white/10 transition-all active:scale-95">
+                  <ListFilter size={18} />
+                  Filter
+                </button>
+                <button className="flex items-center gap-2 px-6 py-3 bg-blue-600 rounded-2xl text-sm font-bold text-white hover:bg-blue-500 transition-all shadow-xl shadow-blue-600/20 active:scale-95">
+                  <Plus size={18} />
+                  Upload
+                </button>
+              </div>
+            </div>
 
             {/* Main Layout Area */}
             <div className="flex-1 flex overflow-hidden">
@@ -485,6 +522,14 @@ function App() {
                   onToggleSelection={toggleSelection}
                   onNavigate={handleNavigate}
                   onUpdateTrip={handleUpdateTrip}
+                />
+
+                <ActionBar 
+                  selectionCount={selectedIds.size}
+                  onClear={() => setSelectedIds(new Set())}
+                  onMerge={() => onMenuAction('create-event', { type: 'photo', path: Array.from(selectedIds)[0] })}
+                  onDownload={() => showToast('Starting download...', 'trip')}
+                  onDelete={() => showToast('Items removed', 'trip')}
                 />
               </div>
             </div>

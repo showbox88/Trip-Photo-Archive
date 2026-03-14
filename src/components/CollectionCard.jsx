@@ -89,7 +89,7 @@ function TripCard({ item, photos, associatedEvents = [], isSelected, onToggleSel
       )}
     >
       {/* ── Cover photo ── */}
-      <div className="relative w-full aspect-[4/3] overflow-hidden rounded-t-xl shrink-0">
+      <div className="relative w-full aspect-[3/2] overflow-hidden rounded-t-xl shrink-0">
         {photos.length > 0 ? (
           <CoverImage photo={photos[0]} />
         ) : (
@@ -258,7 +258,7 @@ function EventCard({ item, photos, isSelected, onToggleSelection, onNavigate, on
       onClick={(e) => { e.stopPropagation(); onToggleSelection(`event:${itemId}`); }}
       onDoubleClick={(e) => { e.stopPropagation(); onNavigate({ type: 'event', id: itemId }); }}
       onContextMenu={(e) => onContextMenu(e, { ...item, type: 'event' })}
-      className={clsx('relative aspect-square cursor-pointer group', isSelected && 'scale-[0.96]')}
+      className={clsx('relative aspect-[3/2] cursor-pointer group', isSelected && 'scale-[0.96]')}
       whileHover={{ scale: 1.03, y: -4, transition: { type: 'spring', stiffness: 400, damping: 30 } }}
       whileTap={{ scale: 0.98 }}
     >

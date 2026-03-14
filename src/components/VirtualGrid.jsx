@@ -12,7 +12,7 @@ export function VirtualGrid({ items, onContextMenu, selectedIds, onToggleSelecti
       ref={parentRef}
       className="flex-1 overflow-y-auto w-full px-6 py-5 scroll-smooth custom-scrollbar"
     >
-      <div className="max-w-screen-2xl mx-auto grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7">
+      <div className="w-full grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 3xl:grid-cols-10">
         <LayoutGroup id="grid-layout">
           {items.map((item, i) => {
             const itemKey = item.type === 'photo' ? item.path : `${item.type}:${item.id}`;
@@ -53,7 +53,7 @@ export function VirtualGrid({ items, onContextMenu, selectedIds, onToggleSelecti
           <motion.div
             layout
             onClick={() => onUpdateTrip?.('NEW_POP_MODAL')}
-            className="border border-dashed border-white/8 rounded-xl flex flex-col items-center justify-center gap-1.5 text-white/20 hover:text-white/40 hover:border-white/15 transition-all cursor-pointer aspect-[16/10]"
+            className="border border-dashed border-white/8 rounded-xl flex flex-col items-center justify-center gap-1.5 text-white/20 hover:text-white/40 hover:border-white/15 transition-all cursor-pointer aspect-[3/2]"
           >
             <PlusIcon size={20} />
             <span className="text-[11px] font-medium">New page</span>

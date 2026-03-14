@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node -e \"require\\(''./node_modules/vite''\\)\")",
+      "Bash(npx vite build)"
+    ]
+  }
+}
