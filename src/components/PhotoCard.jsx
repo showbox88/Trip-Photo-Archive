@@ -5,52 +5,48 @@ import { useObjectUrl } from '../hooks/useObjectUrl';
 import { Image, Heart } from 'lucide-react';
 import { format } from 'date-fns';
 import clsx from 'clsx';
+import { getPropertyColor } from '../utils/propertyColor';
 
 export const PhotoCard = memo(function PhotoCard({ fileInfo, index, onContextMenu, isSelected, onToggleSelection, onNavigate, onUpdate, animatingTargetId, metadata }) {
   const categories = metadata?.categories || [];
   const cities = metadata?.cities || [];
 
-  const getPropertyColor = (name, list) => {
-    const found = (list || []).find(it => (typeof it === 'string' ? it === name : it.name === name));
-    return found?.color || found?.hex || '#60a5fa';
-  };
   const [thumbUrl, setThumbUrl] = useState(null);
-  const rawUrl = useObjectUrl(fileInfo.handle);
-  
-  const date = fileInfo.timestamp ? new Date(fileInfo.timestamp) : null;
-  const rating = fileInfo.rating ?? 0;
-  
-  // 异步加载缩略图
+  const [thumbChecked, setThumbChecked] = useState(false);
+
+  // 先查 IDB 缩略图，有则直接用，无则再加载原图
   useEffect(() => {
     let isMounted = true;
     async function loadThumb() {
       try {
-        const cached = await idb.get(fileInfo.path, 'ThumbnailStore');
-        if (isMounted && cached) {
-          setThumbUrl(cached);
+        const cached = await idb.get(fileInfo.path, 'ThumbnailStoreV2');
+        if (isMounted) {
+          if (cached) setThumbUrl(cached);
+          setThumbChecked(true);
         }
-      } catch (e) {}
+      } catch (e) {
+        if (isMounted) setThumbChecked(true);
+      }
     }
     loadThumb();
     return () => { isMounted = false; };
   }, [fileInfo.path]);
 
-  // 渲染时优先使用缩略图
+  // 只有在没有缩略图时才加载原图，避免大量原图同时驻留内存
+  const rawUrl = useObjectUrl(thumbChecked && !thumbUrl ? fileInfo.handle : null);
   const displayUrl = thumbUrl || rawUrl;
+
+  const date = fileInfo.timestamp ? new Date(fileInfo.timestamp) : null;
+  const rating = fileInfo.rating ?? 0;
   
   const displayTitle = fileInfo.name.replace(/\.[^/.]+$/, "");
   const finalLayoutId = (isSelected && animatingTargetId) ? animatingTargetId : fileInfo.path;
 
   return (
     <motion.div
-      layout
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ 
-        delay: index * 0.01, 
-        duration: 0.4,
-        ease: "easeOut"
-      }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.2 }}
       onContextMenu={(e) => onContextMenu(e, fileInfo)}
       onClick={(e) => {
         e.stopPropagation();

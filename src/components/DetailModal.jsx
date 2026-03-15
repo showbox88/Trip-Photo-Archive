@@ -4,6 +4,7 @@ import { X, Heart, Calendar, MapPin, Tag, FileText, DollarSign, Clock, Info, Ima
 import { useObjectUrl } from '../hooks/useObjectUrl';
 import clsx from 'clsx';
 import { format } from 'date-fns';
+import { getPropertyColor } from '../utils/propertyColor';
 
 export function DetailModal({ isOpen, onClose, type, item, allPhotos = [], metadata = {}, onUpdate }) {
   const [formData, setFormData] = useState({});
@@ -13,12 +14,6 @@ export function DetailModal({ isOpen, onClose, type, item, allPhotos = [], metad
 
   const categories = metadata.categories || [];
   const cities = metadata.cities || [];
-
-  // Helper to find color for a name
-  const getPropertyColor = (name, list) => {
-    const found = (list || []).find(it => (typeof it === 'string' ? it === name : it.name === name));
-    return found?.color || found?.hex || '#60a5fa'; // Default blue
-  };
 
   const displayCities = useMemo(() => {
     if (!item) return [];

@@ -3,8 +3,8 @@
  */
 const DB_NAME = 'TripArchiveDB';
 const STORE_NAME = 'WorkspaceStore';
-const THUMB_STORE = 'ThumbnailStore';
-const DB_VERSION = 2;
+const THUMB_STORE = 'ThumbnailStoreV2';
+const DB_VERSION = 3;
 
 function openDB() {
   return new Promise((resolve, reject) => {
@@ -13,6 +13,10 @@ function openDB() {
       const db = event.target.result;
       if (!db.objectStoreNames.contains(STORE_NAME)) {
         db.createObjectStore(STORE_NAME);
+      }
+      // V1 旧存储（250px）废弃，创建 V2（600px）
+      if (db.objectStoreNames.contains('ThumbnailStore')) {
+        db.deleteObjectStore('ThumbnailStore');
       }
       if (!db.objectStoreNames.contains(THUMB_STORE)) {
         db.createObjectStore(THUMB_STORE);

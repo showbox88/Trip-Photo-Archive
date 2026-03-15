@@ -12,42 +12,8 @@ const STAGES = [
   { id: 'On the way',  color: 'text-rose-400',   bg: 'bg-rose-400/15',   border: 'border-rose-400/25' },
 ];
 
-// 根据标签名 hash 稳定分配颜色，与截图效果一致
-const TAG_PALETTES = [
-  'bg-red-500/20 text-red-400',
-  'bg-blue-500/20 text-blue-400',
-  'bg-emerald-500/20 text-emerald-400',
-  'bg-amber-500/20 text-amber-400',
-  'bg-purple-500/20 text-purple-400',
-  'bg-pink-500/20 text-pink-400',
-  'bg-cyan-500/20 text-cyan-400',
-  'bg-orange-500/20 text-orange-400',
-  'bg-teal-500/20 text-teal-400',
-  'bg-lime-600/20 text-lime-400',
-  'bg-indigo-500/20 text-indigo-400',
-  'bg-rose-500/20 text-rose-400',
-];
-
-function tagColor(name = '') {
-  let h = 0;
-  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) | 0;
-  return TAG_PALETTES[Math.abs(h) % TAG_PALETTES.length];
-}
-
-function Tag({ label, small }) {
-  return (
-    <span className={clsx(
-      'rounded px-1.5 font-semibold whitespace-nowrap',
-      small ? 'py-px text-[8px]' : 'py-0.5 text-[9px]',
-      tagColor(label)
-    )}>
-      {label}
-    </span>
-  );
-}
-
 // ─── Collection Card (竖向 Notion 画廊样式) ──────────────────────────────────────────
-export function CollectionCard({ type, item, photos, associatedEvents = [], index, isSelected, onToggleSelection, onNavigate, onContextMenu, onUpdateTrip }) {
+export function CollectionCard({ type, item, photos, index, isSelected, onToggleSelection, onNavigate, onContextMenu, onUpdateTrip }) {
   const isTrip = type === 'trip';
   const itemId = isTrip ? item.trip_id : item.event_id;
   const selectionId = `${type}:${itemId}`;
@@ -61,22 +27,7 @@ export function CollectionCard({ type, item, photos, associatedEvents = [], inde
   const endDate   = isTrip ? (item.endDate ? new Date(item.endDate) : null) : null;
   const duration  = isTrip ? (item.duration || (startDate && endDate ? differenceInDays(endDate, startDate) + 1 : 0)) : 0;
   
-  const cities    = isTrip 
-    ? Array.from(new Set(associatedEvents.map(e => e.city).filter(Boolean)))
-    : (item.city ? [item.city] : []);
-    
   const rating    = item.rating ?? 0;
-
-  const tags = [];
-  if (isTrip && item.city) {
-    tags.push(item.city); 
-  }
-  if (item.category) {
-    tags.push(item.category);
-  }
-  if (item.tags && Array.from(item.tags).length > 0) {
-    tags.push(...item.tags);
-  }
 
   const [activeMenu, setActiveMenu] = useState(null);
   const menuRef = useRef(null);
@@ -235,34 +186,6 @@ export function CollectionCard({ type, item, photos, associatedEvents = [], inde
                     {item.stage === s.id && <Check size={9} className="ml-auto text-white/40" />}
                   </button>
                 ))}
-              </motion.div>
-            )}
-
-            {activeMenu === 'rating' && (
-              <motion.div
-                initial={{ opacity: 0, y: 4, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 4, scale: 0.95 }}
-                className="absolute bottom-full mb-2 left-2 z-[300] w-40 bg-[#25262e] border border-white/10 rounded-xl shadow-2xl p-2.5 backdrop-blur-xl"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <p className="text-[7px] text-white/40 font-bold px-1 pb-2 uppercase tracking-widest">设置好感度 (1-10)</p>
-                <div className="grid grid-cols-5 gap-1">
-                  {[1,2,3,4,5,6,7,8,9,10].map(v => (
-                    <button
-                      key={v}
-                      onClick={() => { onUpdateTrip(item.trip_id, { rating: v }); setActiveMenu(null); }}
-                      className={clsx(
-                        'w-6 h-6 flex items-center justify-center rounded-md text-[9px] font-bold transition-all',
-                        v <= rating 
-                          ? 'bg-purple-500 text-white' 
-                          : 'bg-white/5 text-white/30 hover:bg-white/10 hover:text-white/60'
-                      )}
-                    >
-                      {v}
-                    </button>
-                  ))}
-                </div>
               </motion.div>
             )}
 

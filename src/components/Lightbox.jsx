@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ChevronLeft, ChevronRight, Download, Info, Maximize2, MapPin, Tag, Star, Calendar, MessageSquare } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Download, Info, MapPin, Tag, Star, Calendar, MessageSquare } from 'lucide-react';
 import { useEffect, useState, useMemo } from 'react';
 import { useObjectUrl } from '../hooks/useObjectUrl';
 import clsx from 'clsx';
@@ -85,9 +85,8 @@ export function Lightbox({ isOpen, onClose, photos, initialIndex = 0, events = [
 
         {/* Main Image Area - Using Dual Buffer for zero-flicker transitions */}
         <div className="relative w-full h-full flex items-center justify-center p-4">
-          <ImageBuffer 
-            currentPhoto={currentPhoto} 
-            showInfo={showInfo}
+          <ImageBuffer
+            currentPhoto={currentPhoto}
           />
 
           {/* Navigation Arrows */}

@@ -357,7 +357,7 @@ export function useFileSystemAccess() {
       // 生成并存储缩略图
       try {
         const thumb = await generateThumbnail(f.handle);
-        await idb.set(f.path, thumb, 'ThumbnailStore');
+        await idb.set(f.path, thumb, 'ThumbnailStoreV2');
       } catch (thumbErr) {
         console.warn(`为照片 ${f.name} 生成缩略图失败:`, thumbErr);
       }
@@ -388,11 +388,11 @@ export function useFileSystemAccess() {
          const exif = await extractExifData(fileMatch.handle);
          
          // 检查并补全缩略图
-         const existingThumb = await idb.get(p.file_name, 'ThumbnailStore');
+         const existingThumb = await idb.get(p.file_name, 'ThumbnailStoreV2');
          if (!existingThumb) {
            try {
              const thumb = await generateThumbnail(fileMatch.handle);
-             await idb.set(p.file_name, thumb, 'ThumbnailStore');
+             await idb.set(p.file_name, thumb, 'ThumbnailStoreV2');
            } catch (e) {
              console.warn(`回填照片 ${p.file_name} 的缩略图失败:`, e);
            }

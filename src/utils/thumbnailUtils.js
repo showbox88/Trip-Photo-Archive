@@ -8,7 +8,7 @@
  * @param {number} maxWidth 
  * @returns {Promise<string>} Data URL of the thumbnail
  */
-export async function generateThumbnail(fileHandle, maxWidth = 250) {
+export async function generateThumbnail(fileHandle, maxWidth = 600) {
   return new Promise(async (resolve, reject) => {
     try {
       const file = await fileHandle.getFile();
@@ -35,7 +35,7 @@ export async function generateThumbnail(fileHandle, maxWidth = 250) {
         ctx.drawImage(img, 0, 0, width, height);
         
         // Get as data URL (smaller than the original for many MB photos)
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.88);
         
         // Clean up
         URL.revokeObjectURL(url);

@@ -1,24 +1,21 @@
 import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
-import { 
-  FolderOpen, Settings, ListFilter, Play, LayoutGrid, AlignJustify, 
-  SlidersHorizontal, ArrowUpDown, Search, Plane, Plus, Trash2, 
-  ChevronRight, CheckCircle2, ChevronDown, Archive, Calendar 
+import {
+  FolderOpen, Settings, Play,
+  SlidersHorizontal, Search, Plus, Trash2,
+  ChevronRight, CheckCircle2, Archive, Calendar
 } from 'lucide-react';
 import { useFileSystemAccess } from './hooks/useFileSystemAccess';
 import { useContextMenu } from './hooks/useContextMenu';
-import { PhotoCard } from './components/PhotoCard';
 import { VirtualGrid } from './components/VirtualGrid';
 import { ContextMenu } from './components/ContextMenu';
 import { CreateEventModal } from './components/CreateEventModal';
 import { CreateTripModal } from './components/CreateTripModal';
 import { DetailModal } from './components/DetailModal';
-import { Sidebar } from './components/Sidebar';
 import { Lightbox } from './components/Lightbox';
 import { ActionBar } from './components/ActionBar';
 import { AlbumsView } from './components/AlbumsView';
 import { PropertyManagerModal } from './components/PropertyManagerModal';
-import { MapPin, Tag } from 'lucide-react';
 import { FilterMenu } from './components/FilterMenu';
 import clsx from 'clsx';
 
@@ -105,7 +102,6 @@ function App() {
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [lightboxPhotos, setLightboxPhotos] = useState([]);
   const [lightboxInitialIndex, setLightboxInitialIndex] = useState(0);
-  const [viewMode, setViewMode] = useState('gallery'); // 'gallery' | 'table'
   const [lastSelectedIndex, setLastSelectedIndex] = useState(null);
   const [animatingTargetId, setAnimatingTargetId] = useState(null);
   const [isPropertyModalOpen, setIsPropertyModalOpen] = useState(false);
@@ -225,9 +221,6 @@ function App() {
     await saveToDatabase(newDbContent);
     showToast(`信息已更新`, itemType === 'trip' ? 'purple' : (itemType === 'event' ? 'orange' : 'blue'));
   };
-
-  // Deprecated: keeping for compatibility with existing components for a moment
-  const handleUpdateTrip = (id, updates) => handleUpdateItem(id, updates, 'trip');
 
   const handleToggleDateSelection = (date, shouldSelect) => {
     const photosOnDate = displayedItems
@@ -1099,12 +1092,14 @@ function App() {
                 {/* ── Design-Specific Sub Header ── */}
                 <div className="px-10 pt-12 pb-8 flex items-center justify-between shrink-0">
               <div className="space-y-2">
-                <h2 className="text-4xl font-black tracking-tight text-white">Switzerland Trip 2024</h2>
+                <h2 className="text-4xl font-black tracking-tight text-white">
+                  {selectedTripId
+                    ? (dbContent.trips.find(t => String(t.trip_id) === String(selectedTripId))?.title || 'Untitled Trip')
+                    : 'All Memories'}
+                </h2>
                 <div className="flex items-center gap-3 text-neutral-500 font-bold text-sm">
                   <Calendar size={14} />
-                  <span>August 12 - August 24</span>
-                  <span className="w-1.5 h-1.5 rounded-full bg-neutral-700 mx-1" />
-                  <span>142 items</span>
+                  <span>{displayedItems.filter(i => i.type === 'photo').length} items</span>
                 </div>
               </div>
 
@@ -1133,16 +1128,6 @@ function App() {
 
             {/* Main Layout Area */}
             <div className="flex-1 flex overflow-hidden">
-              {/* Sidebar: only show in table view */}
-              {viewMode === 'table' && (
-                <Sidebar
-                  dbContent={dbContent}
-                  activeFilter={activeFilter}
-                  onFilterChange={setActiveFilter}
-                  photos={enrichedPhotos}
-                />
-              )}
-
               <div className="flex-1 flex flex-col relative">
                 {/* Virtualized Infinite Grid */}
                 <VirtualGrid 
