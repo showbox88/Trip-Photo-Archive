@@ -246,8 +246,9 @@ export function useFileSystemAccess() {
              ...updatedPhotos[idx],
              timestamp: exif.date && exif.time ? `${exif.date}T${exif.time}` : updatedPhotos[idx].timestamp,
              date: exif.date || updatedPhotos[idx].date,
-             latitude: exif.latitude,
-             longitude: exif.longitude
+             time: exif.time || updatedPhotos[idx].time || '',
+             latitude: exif.latitude ?? updatedPhotos[idx].latitude,
+             longitude: exif.longitude ?? updatedPhotos[idx].longitude
            };
            hasChanges = true;
          }

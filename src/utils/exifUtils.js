@@ -38,9 +38,27 @@ export async function extractExifData(fileHandle) {
       }
     }
 
+    // 如果 EXIF 中没有时间，回退到文件系统的最后修改时间
+    if (!date || !time) {
+      const lastModified = new Date(file.lastModified);
+      date = lastModified.toISOString().split('T')[0];
+      time = lastModified.toTimeString().split(' ')[0]; // "HH:MM:SS"
+    }
+
     return { latitude, longitude, date, time };
   } catch (error) {
-    console.warn('Failed to extract EXIF:', error);
-    return { latitude: null, longitude: null, date: null, time: null };
+    console.warn('Failed to extract EXIF, falling back to file stats:', error);
+    try {
+      const file = await fileHandle.getFile();
+      const lastModified = new Date(file.lastModified);
+      return { 
+        latitude: null, 
+        longitude: null, 
+        date: lastModified.toISOString().split('T')[0], 
+        time: lastModified.toTimeString().split(' ')[0] 
+      };
+    } catch (e) {
+      return { latitude: null, longitude: null, date: null, time: null };
+    }
   }
 }

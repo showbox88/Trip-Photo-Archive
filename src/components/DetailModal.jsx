@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Heart, Calendar, MapPin, Tag, FileText, DollarSign, Clock, Info, Image as ImageIcon } from 'lucide-react';
+import { X, Heart, Calendar, MapPin, Tag, FileText, DollarSign, Clock, Info, Image as ImageIcon, ChevronDown } from 'lucide-react';
 import { useObjectUrl } from '../hooks/useObjectUrl';
 import clsx from 'clsx';
 import { format } from 'date-fns';
@@ -69,7 +69,6 @@ export function DetailModal({ isOpen, onClose, type, item, allPhotos = [], onUpd
     
     // 对于行程或事件，查找关联照片
     if (isTrip) {
-      // 找到行程关联的所有事件的照片
       const tripPhotos = allPhotos.filter(p => p.trip_id === item.trip_id);
       return tripPhotos[0] || null;
     }
