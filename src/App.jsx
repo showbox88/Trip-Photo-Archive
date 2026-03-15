@@ -16,6 +16,9 @@ import { DetailModal } from './components/DetailModal';
 import { Sidebar } from './components/Sidebar';
 import { Lightbox } from './components/Lightbox';
 import { ActionBar } from './components/ActionBar';
+import { AlbumsView } from './components/AlbumsView';
+import { PropertyManagerModal } from './components/PropertyManagerModal';
+import { MapPin } from 'lucide-react';
 import clsx from 'clsx';
 
 function NavLink({ label, active, onClick }) {
@@ -85,6 +88,15 @@ function App() {
   const [viewMode, setViewMode] = useState('gallery'); // 'gallery' | 'table'
   const [lastSelectedIndex, setLastSelectedIndex] = useState(null);
   const [animatingTargetId, setAnimatingTargetId] = useState(null);
+  const [isPropertyModalOpen, setIsPropertyModalOpen] = useState(false);
+  const [isAvatarMenuOpen, setIsAvatarMenuOpen] = useState(false);
+
+  // Ensure metadata defaults
+  const metadata = useMemo(() => ({
+    categories: dbContent.categories || ['美食', '景点', '街景', '酒店', '交通', '自然', '人像', '购物', '其他'],
+    cities: dbContent.cities || [],
+    tags: dbContent.tags || []
+  }), [dbContent.categories, dbContent.cities, dbContent.tags]);
 
   useEffect(() => {
     checkPersistedWorkspace();
@@ -108,11 +120,13 @@ function App() {
   // Handler for all metadata updates (inline/detail modal)
   const handleUpdateItem = async (id, updates, typeOverride) => {
     // Determine type from id or override
+    const normalizedId = String(id).replace(/\\/g, '/');
     let itemType = typeOverride;
+    
     if (!itemType) {
-      if (typeof id === 'string' && id.includes('\\')) itemType = 'photo';
-      else if (dbContent.trips.find(t => String(t.trip_id) === String(id))) itemType = 'trip';
-      else itemType = 'event';
+      if (dbContent.trips.find(t => String(t.trip_id) === String(id))) itemType = 'trip';
+      else if (dbContent.events.find(e => String(e.event_id) === String(id))) itemType = 'event';
+      else itemType = 'photo';
     }
 
     const newDbContent = { ...dbContent };
@@ -127,7 +141,7 @@ function App() {
       );
     } else if (itemType === 'photo') {
       newDbContent.photos = dbContent.photos.map(p => 
-        p.file_name === id ? { ...p, ...updates } : p
+        p.file_name.replace(/\\/g, '/') === normalizedId ? { ...p, ...updates } : p
       );
     }
 
@@ -173,7 +187,7 @@ function App() {
     });
   };
 
-  const onMenuAction = (actionId, targetItem, extraData) => {
+  const onMenuAction = async (actionId, targetItem, extraData) => {
     if (actionId === 'create-event') {
       const targets = enrichedPhotos.filter(p => selectedIds.has(p.path));
       setActivePhotos(targets.length > 0 ? targets : [targetItem]);
@@ -194,11 +208,108 @@ function App() {
       
       const finalPaths = selectedPhotoPaths.length > 0 ? selectedPhotoPaths : [targetItem.path];
       handleAssignToEvent(extraData.eventId, finalPaths);
+    } else if (actionId === 'set-trip-cover') {
+      const tripId = targetItem.trip_id || extraData?.trip_id;
+      if (tripId && targetItem.path) {
+        handleUpdateItem(tripId, { cover_photo_id: targetItem.path }, 'trip');
+        const trip = dbContent.trips.find(t => String(t.trip_id) === String(tripId));
+        showToast(`已将照片设为 "${trip?.title || '行程'}" 的封面`, 'purple');
+      }
+    } else if (actionId === 'set-category') {
+      const selectedPhotoPaths = Array.from(selectedIds)
+        .filter(id => !id.startsWith('event:'));
+      const finalPaths = selectedPhotoPaths.length > 0 ? selectedPhotoPaths : [targetItem.path];
+      const normalizedTargets = new Set(finalPaths.map(p => p.replace(/\\/g, '/')));
+      
+      const newPhotos = dbContent.photos.map(p => {
+        const pPath = p.file_name.replace(/\\/g, '/');
+        if (normalizedTargets.has(pPath)) {
+          return { ...p, category: extraData.category };
+        }
+        return p;
+      });
+      
+      await saveToDatabase({ ...dbContent, photos: newPhotos });
+      showToast(`已将 ${finalPaths.length} 张照片批量分类为 "${extraData.category}"`, 'blue');
+      setSelectedIds(new Set());
+    } else if (actionId === 'set-rating') {
+      const selectedPhotoPaths = Array.from(selectedIds)
+        .filter(id => !id.startsWith('event:'));
+      const finalPaths = selectedPhotoPaths.length > 0 ? selectedPhotoPaths : [targetItem.path];
+      const normalizedTargets = new Set(finalPaths.map(p => p.replace(/\\/g, '/')));
+      
+      const newPhotos = dbContent.photos.map(p => {
+        const pPath = p.file_name.replace(/\\/g, '/');
+        if (normalizedTargets.has(pPath)) {
+          return { ...p, rating: extraData.rating };
+        }
+        return p;
+      });
+      
+      await saveToDatabase({ ...dbContent, photos: newPhotos });
+      showToast(`已将 ${finalPaths.length} 张照片的好感度更新为 ${extraData.rating}`, 'red');
+      setSelectedIds(new Set());
+    } else if (actionId === 'set-event-cover') {
+      const eventId = targetItem.event_id || extraData?.event_id;
+      if (eventId && targetItem.path) {
+        handleUpdateItem(eventId, { cover_photo_id: targetItem.path }, 'event');
+        const event = dbContent.events.find(e => String(e.event_id) === String(eventId));
+        showToast(`已将照片设为 "${event?.title || '事件'}" 的封面`, 'orange');
+      }
+    } else if (actionId === 'set-city') {
+      const selectedPhotoPaths = Array.from(selectedIds)
+        .filter(id => !id.startsWith('event:'));
+      const finalPaths = selectedPhotoPaths.length > 0 ? selectedPhotoPaths : [targetItem.path];
+      const normalizedTargets = new Set(finalPaths.map(p => p.replace(/\\/g, '/')));
+      
+      const newPhotos = dbContent.photos.map(p => {
+        const pPath = p.file_name.replace(/\\/g, '/');
+        if (normalizedTargets.has(pPath)) {
+          return { ...p, city: extraData.city };
+        }
+        return p;
+      });
+      
+      await saveToDatabase({ ...dbContent, photos: newPhotos });
+      showToast(`已将 ${finalPaths.length} 张照片的城市更新为 ${extraData.city}`, 'emerald');
+      setSelectedIds(new Set());
+    } else if (actionId === 'create-city') {
+      const cityName = window.prompt('请输入新的城市名称:');
+      if (cityName && cityName.trim()) {
+        const trimmedCity = cityName.trim();
+        const selectedPhotoPaths = Array.from(selectedIds)
+          .filter(id => !id.startsWith('event:'));
+        const finalPaths = selectedPhotoPaths.length > 0 ? selectedPhotoPaths : [targetItem.path];
+        const normalizedTargets = new Set(finalPaths.map(p => p.replace(/\\/g, '/')));
+
+        // 1. Update photos
+        const newPhotos = dbContent.photos.map(p => {
+          const pPath = p.file_name.replace(/\\/g, '/');
+          if (normalizedTargets.has(pPath)) {
+            return { ...p, city: trimmedCity };
+          }
+          return p;
+        });
+
+        // 2. Add to global cities if missing
+        const newCities = Array.from(new Set([...(dbContent.cities || []), trimmedCity])).sort();
+
+        await saveToDatabase({ 
+          ...dbContent, 
+          photos: newPhotos,
+          cities: newCities
+        });
+        showToast(`已创建预览并标记为 ${trimmedCity}`, 'emerald');
+        setSelectedIds(new Set());
+      }
     } else if (actionId === 'info') {
       const type = targetItem.type || (targetItem.path ? 'photo' : (targetItem.trip_id ? 'trip' : 'event'));
       const data = targetItem.item || targetItem;
       setDetailItem({ type, data });
       setIsDetailModalOpen(true);
+    } else if (actionId === 'delete') {
+      // Implement basic delete if exists (or skip if not requested, but good practice)
+      showToast('删除功能尚未完全实现', 'orange');
     }
   };
 
@@ -347,6 +458,14 @@ function App() {
     setTimeout(() => setAnimatingTargetId(null), 1000);
     const event = dbContent.events.find(e => e.event_id === eventId);
     showToast(`成功将照片添加到事件 "${event?.title || '未知事件'}"`, 'orange');
+  };
+
+  const handleUpdateMetadata = async (newMetadata) => {
+    await saveToDatabase({
+      ...dbContent,
+      ...newMetadata
+    });
+    showToast('属性列表已更新', 'blue');
   };
 
   const handleResetDatabase = async () => {
@@ -603,13 +722,6 @@ function App() {
                 
                 <nav className="hidden md:flex items-center gap-8">
                   <NavLink 
-                    label="All Photos" 
-                    active={activeFilter.type === 'all'}
-                    onClick={() => {
-                      setActiveFilter({ type: 'all' });
-                    }} 
-                  />
-                  <NavLink 
                     label="Albums" 
                     active={activeFilter.type === 'all-albums'}
                     onClick={() => setActiveFilter({ type: 'all-albums' })}
@@ -619,27 +731,89 @@ function App() {
                     active={activeFilter.type === 'all-events'}
                     onClick={() => setActiveFilter({ type: 'all-events' })}
                   />
+                  <NavLink 
+                    label="All Photos" 
+                    active={activeFilter.type === 'all'}
+                    onClick={() => {
+                      setActiveFilter({ type: 'all' });
+                    }} 
+                  />
                   <NavLink label="Map" />
                 </nav>
               </div>
 
               <div className="flex items-center gap-6">
                 <div className="relative group">
-                  <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 group-focus-within:text-blue-400 transition-colors" />
+                  <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 group-focus-within:text-[#0d7ff2] transition-colors" />
                   <input 
                     type="text" 
                     placeholder="Search your memories..." 
-                    className="w-80 h-12 pl-12 pr-4 bg-white/5 border border-white/10 rounded-2xl text-sm text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:bg-white/10 transition-all font-medium"
+                    className="w-80 h-12 pl-12 pr-4 bg-slate-800/50 border border-slate-700 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#0d7ff2] focus:border-transparent transition-all font-medium"
                   />
                 </div>
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-neutral-400 to-neutral-600 border-2 border-white/10 p-0.5 overflow-hidden active:scale-95 transition-transform cursor-pointer shadow-lg">
-                  <img src="https://ui-avatars.com/api/?name=User&background=333&color=fff" alt="Avatar" className="w-full h-full rounded-full object-cover" />
+                
+                <div className="relative">
+                  <div 
+                    onClick={() => setIsAvatarMenuOpen(!isAvatarMenuOpen)}
+                    className="h-10 w-10 rounded-full bg-[#0d7ff2]/20 border border-[#0d7ff2]/40 flex items-center justify-center text-[#0d7ff2] font-bold overflow-hidden active:scale-95 transition-transform cursor-pointer ring-offset-2 ring-offset-black hover:ring-2 hover:ring-[#0d7ff2]/50 transition-all"
+                  >
+                    <img src="https://ui-avatars.com/api/?name=User&background=333&color=fff" alt="Avatar" className="w-full h-full object-cover" />
+                  </div>
+
+                  <AnimatePresence>
+                    {isAvatarMenuOpen && (
+                      <>
+                        <div 
+                          className="fixed inset-0 z-[140]" 
+                          onClick={() => setIsAvatarMenuOpen(false)} 
+                        />
+                        <motion.div
+                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                          className="absolute right-0 mt-3 w-56 bg-[#1a1b1e]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl p-2 z-[150] ring-1 ring-black/50"
+                        >
+                          <div className="px-3 py-2 border-b border-white/5 mb-1">
+                            <p className="text-xs font-bold text-white">账户管理</p>
+                            <p className="text-[10px] text-neutral-500">本地离线模式</p>
+                          </div>
+                          
+                          <button
+                            onClick={() => { setIsAvatarMenuOpen(false); showToast('设置功能即将上线 (WIP)', 'blue'); }}
+                            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 transition-all group text-neutral-400"
+                          >
+                            <Settings size={18} className="group-hover:rotate-45 transition-transform" />
+                            <span className="text-sm font-medium text-neutral-200 group-hover:text-white">系统设置</span>
+                          </button>
+
+                          <button
+                            onClick={() => { setIsAvatarMenuOpen(false); setIsPropertyModalOpen(true); }}
+                            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 transition-all group text-blue-400"
+                          >
+                            <SlidersHorizontal size={18} className="group-hover:scale-110 transition-transform" />
+                            <span className="text-sm font-medium text-neutral-200 group-hover:text-white">属性编辑</span>
+                          </button>
+                        </motion.div>
+                      </>
+                    )}
+                  </AnimatePresence>
                 </div>
               </div>
             </header>
 
-            {/* ── Design-Specific Sub Header ── */}
-            <div className="px-10 pt-12 pb-8 flex items-center justify-between">
+            {/* Content Area Rendering Logic */}
+            {activeFilter.type === 'all-albums' ? (
+              <AlbumsView 
+                trips={displayedItems}
+                onNavigate={handleNavigate}
+                onContextMenu={onMenuAction}
+                onUpdateTrip={handleUpdateItem}
+                onCreateNew={() => setIsTripModalOpen(true)}
+              />
+            ) : (
+              <div className={`flex-1 flex flex-col min-h-0 ${activeFilter.type === 'all' ? 'bg-[#101922]' : ''}`}>
+                {/* ── Design-Specific Sub Header ── */}
+                <div className="px-10 pt-12 pb-8 flex items-center justify-between shrink-0">
               <div className="space-y-2">
                 <h2 className="text-4xl font-black tracking-tight text-white">Switzerland Trip 2024</h2>
                 <div className="flex items-center gap-3 text-neutral-500 font-bold text-sm">
@@ -698,10 +872,11 @@ function App() {
                   onClear={() => setSelectedIds(new Set())}
                   onMerge={() => onMenuAction('create-event', { type: 'photo', path: Array.from(selectedIds)[0] })}
                   onDownload={() => showToast('Starting download...', 'trip')}
-                  onDelete={() => showToast('Items removed', 'trip')}
                 />
               </div>
             </div>
+            </div>
+            )}
 
             <ContextMenu 
               menu={contextMenu} 
@@ -710,6 +885,15 @@ function App() {
               selectionCount={selectedIds.size}
               trips={dbContent.trips}
               events={dbContent.events}
+              categories={metadata.categories}
+              cities={metadata.cities}
+            />
+
+            <PropertyManagerModal
+              isOpen={isPropertyModalOpen}
+              onClose={() => setIsPropertyModalOpen(false)}
+              metadata={metadata}
+              onUpdate={handleUpdateMetadata}
             />
 
             <CreateEventModal 
@@ -770,11 +954,9 @@ function App() {
                   )}
                 >
                   <CheckCircle2 size={18} />
-                  <span className="text-sm font-bold tracking-tight">{toast.message}</span>
                 </motion.div>
               )}
             </AnimatePresence>
-
             </LayoutGroup>
           </motion.div>
         )}

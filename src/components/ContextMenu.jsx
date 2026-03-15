@@ -1,8 +1,8 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { PlusCircle, Info, Trash2, Tag, Move, Layers, ChevronRight, Briefcase } from 'lucide-react';
+import { PlusCircle, Info, Trash2, Tag, Move, Layers, ChevronRight, Briefcase, ImagePlus, Heart, MapPin } from 'lucide-react';
 import { useState } from 'react';
 
-export function ContextMenu({ menu, onClose, onAction, selectionCount, trips = [], events = [] }) {
+export function ContextMenu({ menu, onClose, onAction, selectionCount, trips = [], events = [], categories = [], cities = [] }) {
   const [activeSubmenu, setActiveSubmenu] = useState(null);
 
   if (!menu) return null;
@@ -10,10 +10,42 @@ export function ContextMenu({ menu, onClose, onAction, selectionCount, trips = [
   const isBulk = selectionCount > 1;
   const targetType = menu.data?.type || 'photo';
 
+  // Extract implicit trip_id from event if necessary
+  let currentTripId = menu.data?.trip_id;
+  if (!currentTripId && targetType === 'photo' && menu.data?.event_id) {
+      const parentEvent = events.find(e => e.event_id === menu.data.event_id);
+      if (parentEvent?.trip_id) {
+          currentTripId = parentEvent.trip_id;
+      }
+  }
+
   const handleAction = (id, extraData) => {
     onAction(id, menu.data, extraData);
     onClose();
   };
+
+  // Constants for sizing
+  const MENU_WIDTH = 220;
+  const SUBMENU_WIDTH = 210; // Safe max for sub-menus
+  const MENU_HEIGHT_ESTIMATE = 400; // Vertical safe area
+
+  // Calculate main menu position
+  let finalX = menu.mouseX;
+  let finalY = menu.mouseY;
+
+  if (finalX + MENU_WIDTH > window.innerWidth) {
+    finalX = window.innerWidth - MENU_WIDTH - 10;
+  }
+  if (finalY + MENU_HEIGHT_ESTIMATE > window.innerHeight) {
+    finalY = window.innerHeight - MENU_HEIGHT_ESTIMATE - 10;
+  }
+
+  // Determine sub-menu direction
+  const showSubmenuOnLeft = finalX + MENU_WIDTH + SUBMENU_WIDTH > window.innerWidth;
+  const subMenuPosClass = showSubmenuOnLeft 
+    ? "absolute right-full top-0 mr-2" 
+    : "absolute left-full top-0 ml-2";
+  const subMenuAnimX = showSubmenuOnLeft ? 10 : -10;
 
   return (
     <motion.div
@@ -22,7 +54,7 @@ export function ContextMenu({ menu, onClose, onAction, selectionCount, trips = [
       exit={{ opacity: 0, scale: 0.95 }}
       transition={{ duration: 0.1 }}
       className="fixed z-[100] min-w-[220px] bg-[#1a1b1e]/90 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl p-2 flex flex-col gap-1 ring-1 ring-black/50"
-      style={{ top: menu.mouseY, left: menu.mouseX }}
+      style={{ top: finalY, left: finalX }}
       onMouseLeave={() => setActiveSubmenu(null)}
     >
       <div className="px-3 py-2 border-b border-white/5 mb-1">
@@ -45,11 +77,138 @@ export function ContextMenu({ menu, onClose, onAction, selectionCount, trips = [
 
           <div className="relative">
             <button
+              onMouseEnter={() => setActiveSubmenu('category')}
+              className="w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 transition-all group text-blue-400"
+            >
+              <div className="flex items-center gap-3">
+                <Tag size={18} className="group-hover:scale-110 transition-transform" />
+                <span className="text-sm font-medium text-neutral-200 group-hover:text-white">修改分类</span>
+              </div>
+              <ChevronRight size={14} className="text-neutral-600 group-hover:text-white transition-colors" />
+            </button>
+
+            <AnimatePresence>
+              {activeSubmenu === 'category' && (
+                <motion.div
+                  initial={{ opacity: 0, x: subMenuAnimX }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: subMenuAnimX }}
+                  className={`${subMenuPosClass} min-w-[160px] bg-[#1a1b1e]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl p-2 flex flex-col gap-1 ring-1 ring-black/50`}
+                >
+                  <p className="px-3 py-1.5 text-[9px] uppercase tracking-widest text-neutral-600 font-black">更新分类为</p>
+                  <div className="max-h-[300px] overflow-y-auto custom-scrollbar">
+                    {categories.map(cat => (
+                      <button
+                        key={cat}
+                        onClick={() => handleAction('set-category', { category: cat })}
+                        className="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-blue-500/20 transition-all group text-left"
+                      >
+                        <span className="text-xs font-medium text-neutral-300 group-hover:text-white truncate">{cat}</span>
+                      </button>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          <div className="relative">
+            <button
+              onMouseEnter={() => setActiveSubmenu('city')}
+              className="w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 transition-all group text-emerald-400"
+            >
+              <div className="flex items-center gap-3">
+                <MapPin size={18} className="group-hover:scale-110 transition-transform" />
+                <span className="text-sm font-medium text-neutral-200 group-hover:text-white">修改城市</span>
+              </div>
+              <ChevronRight size={14} className="text-neutral-600 group-hover:text-white transition-colors" />
+            </button>
+
+            <AnimatePresence>
+              {activeSubmenu === 'city' && (
+                <motion.div
+                  initial={{ opacity: 0, x: subMenuAnimX }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: subMenuAnimX }}
+                  className={`${subMenuPosClass} min-w-[160px] bg-[#1a1b1e]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl p-2 flex flex-col gap-1 ring-1 ring-black/50`}
+                >
+                  <p className="px-3 py-1.5 text-[9px] uppercase tracking-widest text-neutral-600 font-black">更新城市为</p>
+                  <div className="max-h-[300px] overflow-y-auto custom-scrollbar">
+                    <button
+                      onClick={() => handleAction('create-city')}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 transition-all group text-left mb-1"
+                    >
+                      <PlusCircle size={14} className="text-emerald-400" />
+                      <span className="text-xs font-bold text-emerald-400">新建城市...</span>
+                    </button>
+                    {cities.map(city => (
+                      <button
+                        key={city}
+                        onClick={() => handleAction('set-city', { city: city })}
+                        className="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-emerald-500/20 transition-all group text-left"
+                      >
+                        <span className="text-xs font-medium text-neutral-300 group-hover:text-white truncate">{city}</span>
+                      </button>
+                    ))}
+                    {cities.length === 0 && (
+                      <p className="px-3 py-4 text-[10px] text-neutral-600 italic text-center">暂无保存城市</p>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          <div className="relative">
+            <button
+              onMouseEnter={() => setActiveSubmenu('rating')}
+              className="w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 transition-all group text-red-500"
+            >
+              <div className="flex items-center gap-3">
+                <Heart size={18} className="group-hover:scale-110 transition-transform" />
+                <span className="text-sm font-medium text-neutral-200 group-hover:text-white">修改好感度</span>
+              </div>
+              <ChevronRight size={14} className="text-neutral-600 group-hover:text-white transition-colors" />
+            </button>
+
+            <AnimatePresence>
+              {activeSubmenu === 'rating' && (
+                <motion.div
+                  initial={{ opacity: 0, x: subMenuAnimX }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: subMenuAnimX }}
+                  className={`${subMenuPosClass} min-w-[210px] bg-[#1a1b1e]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl p-2 flex flex-col gap-1 ring-1 ring-black/50`}
+                >
+                  <p className="px-3 py-1.5 text-[9px] uppercase tracking-widest text-neutral-600 font-black">更新评分</p>
+                  <div className="flex flex-col gap-2 p-2 bg-white/5 rounded-xl border border-white/5 mx-1">
+                    <div className="flex items-center gap-1 justify-between px-1">
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => (
+                        <button
+                          key={num}
+                          onClick={() => handleAction('set-rating', { rating: num })}
+                          className="group/heart transition-all duration-200 transform hover:scale-125 active:scale-95 px-0.5"
+                        >
+                          <Heart 
+                            size={14} 
+                            className="text-white/10 group-hover/heart:text-red-500 group-hover/heart:fill-red-500 transition-all duration-300"
+                            strokeWidth={2}
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          <div className="relative">
+            <button
               onMouseEnter={() => setActiveSubmenu('events')}
               className="w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 transition-all group text-orange-400"
             >
               <div className="flex items-center gap-3">
-                <Tag size={18} className="group-hover:scale-110 transition-transform" />
+                <PlusCircle size={18} className="group-hover:scale-110 transition-transform" />
                 <span className="text-sm font-medium text-neutral-200 group-hover:text-white">添加到已有事件</span>
               </div>
               <ChevronRight size={14} className="text-neutral-600 group-hover:text-white transition-colors" />
@@ -58,10 +217,10 @@ export function ContextMenu({ menu, onClose, onAction, selectionCount, trips = [
             <AnimatePresence>
               {activeSubmenu === 'events' && (
                 <motion.div
-                  initial={{ opacity: 0, x: -10 }}
+                  initial={{ opacity: 0, x: subMenuAnimX }}
                   animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -10 }}
-                  className="absolute left-full top-0 ml-2 min-w-[200px] bg-[#1a1b1e]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl p-2 flex flex-col gap-1 ring-1 ring-black/50"
+                  exit={{ opacity: 0, x: subMenuAnimX }}
+                  className={`${subMenuPosClass} min-w-[200px] bg-[#1a1b1e]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl p-2 flex flex-col gap-1 ring-1 ring-black/50`}
                 >
                   <p className="px-3 py-1.5 text-[9px] uppercase tracking-widest text-neutral-600 font-black">选择目标事件</p>
                   {events.length === 0 ? (
@@ -113,10 +272,10 @@ export function ContextMenu({ menu, onClose, onAction, selectionCount, trips = [
             <AnimatePresence>
               {activeSubmenu === 'trips' && (
                 <motion.div
-                  initial={{ opacity: 0, x: -10 }}
+                  initial={{ opacity: 0, x: subMenuAnimX }}
                   animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -10 }}
-                  className="absolute left-full top-0 ml-2 min-w-[200px] bg-[#1a1b1e]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl p-2 flex flex-col gap-1 ring-1 ring-black/50"
+                  exit={{ opacity: 0, x: subMenuAnimX }}
+                  className={`${subMenuPosClass} min-w-[200px] bg-[#1a1b1e]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl p-2 flex flex-col gap-1 ring-1 ring-black/50`}
                 >
                   <p className="px-3 py-1.5 text-[9px] uppercase tracking-widest text-neutral-600 font-black">选择目标行程</p>
                   {trips.length === 0 ? (
@@ -144,6 +303,26 @@ export function ContextMenu({ menu, onClose, onAction, selectionCount, trips = [
 
       <div className="h-px bg-white/5 my-1" />
       
+      {targetType === 'photo' && currentTripId && (
+        <button
+          onClick={() => handleAction('set-trip-cover', { trip_id: currentTripId })}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 transition-all group text-purple-400"
+        >
+          <ImagePlus size={18} className="group-hover:scale-110 transition-transform" />
+          <span className="text-sm font-medium text-purple-400/80 group-hover:text-purple-400">设为所在行程封面</span>
+        </button>
+      )}
+
+      {targetType === 'photo' && menu.data?.event_id && (
+        <button
+          onClick={() => handleAction('set-event-cover', { event_id: menu.data.event_id })}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 transition-all group text-orange-400"
+        >
+          <ImagePlus size={18} className="group-hover:scale-110 transition-transform" />
+          <span className="text-sm font-medium text-orange-400/80 group-hover:text-orange-400">设为事件封面</span>
+        </button>
+      )}
+
       <button
         onClick={() => handleAction('info')}
         className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 transition-all group text-neutral-400"

@@ -1,12 +1,12 @@
+import { memo, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { useState, useEffect } from 'react';
 import * as idb from '../utils/idb';
 import { useObjectUrl } from '../hooks/useObjectUrl';
-import { Image, MoreVertical, Calendar, Heart } from 'lucide-react';
+import { Image, Heart } from 'lucide-react';
 import { format } from 'date-fns';
 import clsx from 'clsx';
 
-export function PhotoCard({ fileInfo, index, onContextMenu, isSelected, onToggleSelection, onNavigate, onUpdate, animatingTargetId }) {
+export const PhotoCard = memo(function PhotoCard({ fileInfo, index, onContextMenu, isSelected, onToggleSelection, onNavigate, onUpdate, animatingTargetId }) {
   const [thumbUrl, setThumbUrl] = useState(null);
   const rawUrl = useObjectUrl(fileInfo.handle);
   
@@ -136,4 +136,4 @@ export function PhotoCard({ fileInfo, index, onContextMenu, isSelected, onToggle
       </div>
     </motion.div>
   );
-}
+});

@@ -69,6 +69,10 @@ export function DetailModal({ isOpen, onClose, type, item, allPhotos = [], onUpd
     
     // 对于行程或事件，查找关联照片
     if (isTrip) {
+      if (item.cover_photo_id) {
+        const cover = allPhotos.find(p => p.path === item.cover_photo_id);
+        if (cover) return cover;
+      }
       const tripPhotos = allPhotos.filter(p => p.trip_id === item.trip_id);
       return tripPhotos[0] || null;
     }
@@ -206,12 +210,34 @@ export function DetailModal({ isOpen, onClose, type, item, allPhotos = [], onUpd
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-500 mb-2 ml-1">分类</label>
-                    <input
-                      type="text"
-                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-4 text-sm font-bold text-white outline-none focus:border-white/20"
-                      value={formData.category || ''}
-                      onChange={(e) => handleChange('category', e.target.value)}
-                    />
+                    {isPhoto ? (
+                      <div className="relative group">
+                        <select
+                          className="w-full h-[54px] bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-sm font-bold text-white outline-none appearance-none cursor-pointer focus:border-white/20 transition-all"
+                          value={formData.category || ''}
+                          onChange={(e) => handleChange('category', e.target.value)}
+                        >
+                          <option value="" disabled className="bg-[#1a1b1e]">选择分类...</option>
+                          <option value="美食" className="bg-[#1a1b1e]">美食</option>
+                          <option value="景点" className="bg-[#1a1b1e]">景点</option>
+                          <option value="街景" className="bg-[#1a1b1e]">街景</option>
+                          <option value="酒店" className="bg-[#1a1b1e]">酒店</option>
+                          <option value="交通" className="bg-[#1a1b1e]">交通</option>
+                          <option value="自然" className="bg-[#1a1b1e]">自然</option>
+                          <option value="人像" className="bg-[#1a1b1e]">人像</option>
+                          <option value="购物" className="bg-[#1a1b1e]">购物</option>
+                          <option value="其他" className="bg-[#1a1b1e]">其他</option>
+                        </select>
+                        <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-500 pointer-events-none" />
+                      </div>
+                    ) : (
+                      <input
+                        type="text"
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-4 text-sm font-bold text-white outline-none focus:border-white/20"
+                        value={formData.category || ''}
+                        onChange={(e) => handleChange('category', e.target.value)}
+                      />
+                    )}
                   </div>
                   <div>
                     <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-500 mb-2 ml-1">城市</label>

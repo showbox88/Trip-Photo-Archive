@@ -115,7 +115,11 @@ export function CollectionCard({ type, item, photos, associatedEvents = [], inde
       {/* ── Cover photo ── */}
       <div className="relative w-full aspect-[3/2] overflow-hidden rounded-t-xl shrink-0">
         {photos.length > 0 ? (
-          <CoverImage photo={photos[0]} isSelected={isSelected} layoutId={selectionId} />
+          <CoverImage 
+            photo={item.cover_photo_id ? (photos.find(p => p.path === item.cover_photo_id) || photos[0]) : photos[0]} 
+            isSelected={isSelected} 
+            layoutId={selectionId} 
+          />
         ) : (
           <div className="w-full h-full bg-neutral-900 flex items-center justify-center">
             <theme.icon className="text-neutral-700" size={28} />

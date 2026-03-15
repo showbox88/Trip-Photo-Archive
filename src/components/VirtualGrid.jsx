@@ -106,8 +106,19 @@ export function VirtualGrid({ items, onContextMenu, selectedIds, onToggleSelecti
   const [displayLimit, setDisplayLimit] = useState(PAGE_SIZE);
   const sentinelRef = useRef(null);
 
+  const prevItemsKeysRef = useRef("");
+
   useEffect(() => {
-    setDisplayLimit(PAGE_SIZE);
+    // Generate a stable key string for detection of "real" navigation/filter changes
+    // We use item count and the first/last few keys as a heuristic
+    const currentKeys = items.length > 0 
+      ? `${items.length}-${items[0].type}:${items[0].id || items[0].path}-${items[items.length-1].type}:${items[items.length-1].id || items[items.length-1].path}`
+      : "empty";
+
+    if (prevItemsKeysRef.current !== currentKeys) {
+        setDisplayLimit(PAGE_SIZE);
+        prevItemsKeysRef.current = currentKeys;
+    }
   }, [items]);
 
   useEffect(() => {

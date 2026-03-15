@@ -16,3 +16,7 @@ body {
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
 }
+
+.trip-card-gradient {
+  background: linear-gradient(180deg, rgba(8, 14, 19, 0) 0%, rgba(8, 14, 19, 0.4) 40%, rgba(8, 14, 19, 0.95) 100%);
+}

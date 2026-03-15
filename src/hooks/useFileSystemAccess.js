@@ -32,7 +32,14 @@ export function useFileSystemAccess() {
   const [photoFiles, setPhotoFiles] = useState([]);
   const [isScanning, setIsScanning] = useState(false);
   const [dbHandle, setDbHandle] = useState(null);
-  const [dbContent, setDbContent] = useState({ trips: [], events: [], photos: [] });
+  const [dbContent, setDbContent] = useState({ 
+    trips: [], 
+    events: [], 
+    photos: [],
+    categories: ['美食', '景点', '街景', '酒店', '交通', '自然', '人像', '购物', '其他'],
+    cities: [],
+    tags: []
+  });
   const [error, setError] = useState(null);
   const [hasPersistedHandle, setHasPersistedHandle] = useState(false);
 
@@ -279,7 +286,13 @@ export function useFileSystemAccess() {
     }
 
     if (hasChanges) {
-      const newDb = { ...currentDb, photos: updatedPhotos };
+      const newDb = { 
+        ...currentDb, 
+        photos: updatedPhotos,
+        categories: currentDb.categories || ['美食', '景点', '街景', '酒店', '交通', '自然', '人像', '购物', '其他'],
+        cities: currentDb.cities || [],
+        tags: currentDb.tags || []
+      };
       const writable = await fileHandle.createWritable();
       await writable.write(JSON.stringify(newDb, null, 2));
       await writable.close();
