@@ -140,7 +140,10 @@ export function VirtualGrid({ items, onContextMenu, selectedIds, onToggleSelecti
     >
       <div 
         ref={gridRef}
-        className="w-full grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 3xl:grid-cols-10"
+        className="w-full grid gap-4"
+        style={{ 
+          gridTemplateColumns: 'repeat(16, minmax(0, 1fr))' 
+        }}
       >
         {visibleItems.map((item, i) => {
             const itemKey = item.type === 'photo' ? item.path : `${item.type}:${item.id}`;

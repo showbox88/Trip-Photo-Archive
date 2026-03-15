@@ -83,31 +83,23 @@ export function Lightbox({ isOpen, onClose, photos, initialIndex = 0, events = [
           </div>
         </div>
 
-        {/* Main Image Area */}
-        <div className="relative w-full h-full flex items-center justify-center p-12">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={currentPhoto.path}
-              initial={{ opacity: 0, scale: 0.9, x: 20 }}
-              animate={{ opacity: 1, scale: 1, x: 0 }}
-              exit={{ opacity: 0, scale: 1.1, x: -20 }}
-              transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="relative max-w-7xl max-h-full shadow-[0_40px_100px_rgba(0,0,0,0.8)] rounded-lg overflow-hidden border border-white/5"
-            >
-              <LightboxImage handle={currentPhoto.handle} alt={currentPhoto.name} />
-            </motion.div>
-          </AnimatePresence>
+        {/* Main Image Area - Using Dual Buffer for zero-flicker transitions */}
+        <div className="relative w-full h-full flex items-center justify-center p-4">
+          <ImageBuffer 
+            currentPhoto={currentPhoto} 
+            showInfo={showInfo}
+          />
 
           {/* Navigation Arrows */}
           <button 
             onClick={handlePrev}
-            className="absolute left-8 p-4 hover:bg-white/10 rounded-full text-white/50 hover:text-white transition-all group"
+            className="absolute left-8 p-4 hover:bg-white/10 rounded-full text-white/50 hover:text-white transition-all group z-50"
           >
             <ChevronLeft size={48} strokeWidth={1} className="group-hover:-translate-x-1 transition-transform" />
           </button>
           <button 
             onClick={handleNext}
-            className="absolute right-8 p-4 hover:bg-white/10 rounded-full text-white/50 hover:text-white transition-all group"
+            className="absolute right-8 p-4 hover:bg-white/10 rounded-full text-white/50 hover:text-white transition-all group z-50"
           >
             <ChevronRight size={48} strokeWidth={1} className="group-hover:translate-x-1 transition-transform" />
           </button>
@@ -204,10 +196,86 @@ export function Lightbox({ isOpen, onClose, photos, initialIndex = 0, events = [
   );
 }
 
-function LightboxImage({ handle, alt }) {
-  const url = useObjectUrl(handle);
-  if (!url) return <div className="w-[800px] h-[600px] bg-neutral-900 animate-pulse flex items-center justify-center"><Maximize2 className="text-white/10 animate-spin" size={48} /></div>;
-  return <img src={url} alt={alt} className="max-w-full max-h-[85vh] object-contain" />;
+/**
+ * ImageBuffer Component
+ * Implements a dual-layer buffer to ensure smooth transitions without flickers.
+ */
+function ImageBuffer({ currentPhoto }) {
+  const [layers, setLayers] = useState([
+    { photo: currentPhoto, key: currentPhoto.path, isReady: true, isExiting: false }
+  ]);
+
+  useEffect(() => {
+    setLayers(prev => {
+      if (prev[prev.length - 1]?.key === currentPhoto.path) return prev;
+      
+      // 将之前的层标记为正在退出
+      const newLayers = prev.map(l => ({ ...l, isExiting: true }));
+      // 只保留最后两层
+      const limited = newLayers.slice(-1);
+      return [...limited, { photo: currentPhoto, key: currentPhoto.path, isReady: false, isExiting: false }];
+    });
+  }, [currentPhoto.path]);
+
+  const handleLayerReady = (key) => {
+    setLayers(prev => prev.map(l => l.key === key ? { ...l, isReady: true } : l));
+    
+    // 延迟清理 (1.5s 动画 + 0.5s 缓冲)
+    setTimeout(() => {
+      setLayers(prev => {
+        const idx = prev.findIndex(l => l.key === key);
+        if (idx > 0) return prev.slice(idx);
+        return prev;
+      });
+    }, 2000);
+  };
+
+  return (
+    <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
+      {layers.map((layer, index) => (
+        <PhotoLayer 
+          key={layer.key}
+          photo={layer.photo}
+          isActive={layer.isReady}
+          isExiting={layer.isExiting}
+          onReady={() => handleLayerReady(layer.key)}
+          zIndex={index}
+        />
+      ))}
+    </div>
+  );
+}
+
+function PhotoLayer({ photo, isActive, isExiting, onReady, zIndex }) {
+  const url = useObjectUrl(photo?.handle);
+  
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ 
+        opacity: isExiting ? 0 : (isActive ? 1 : 0) 
+      }}
+      transition={{ 
+        duration: 1.5, 
+        ease: "easeInOut",
+        // 当退出时，同步微调延迟至 1.2s，确保新图接近完全不透明时开始淡出
+        delay: isExiting ? 1.2 : 0 
+      }}
+      style={{ zIndex }}
+      className="absolute inset-0 flex items-center justify-center p-4"
+    >
+      {url ? (
+        <img 
+          src={url} 
+          alt={photo?.name} 
+          onLoad={onReady}
+          className="max-w-[95vw] max-h-[90vh] object-contain shadow-2xl select-none"
+        />
+      ) : (
+        <div className="w-12 h-12 border-2 border-white/5 border-t-white/20 rounded-full animate-spin" />
+      )}
+    </motion.div>
+  );
 }
 
 function InfoItem({ label, value, icon, color = "text-neutral-300" }) {
