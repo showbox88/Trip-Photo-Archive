@@ -1,18 +1,37 @@
 import { motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
+import * as idb from '../utils/idb';
 import { useObjectUrl } from '../hooks/useObjectUrl';
 import { Image, MoreVertical, Calendar, Heart } from 'lucide-react';
 import { format } from 'date-fns';
 import clsx from 'clsx';
 
 export function PhotoCard({ fileInfo, index, onContextMenu, isSelected, onToggleSelection, onNavigate, onUpdate, animatingTargetId }) {
-  const imgUrl = useObjectUrl(fileInfo.handle);
+  const [thumbUrl, setThumbUrl] = useState(null);
+  const rawUrl = useObjectUrl(fileInfo.handle);
+  
   const date = fileInfo.timestamp ? new Date(fileInfo.timestamp) : null;
   const rating = fileInfo.rating ?? 0;
   
-  // 提取简单的文件名作为标题（移除扩展名）
-  const displayTitle = fileInfo.name.replace(/\.[^/.]+$/, "");
+  // 异步加载缩略图
+  useEffect(() => {
+    let isMounted = true;
+    async function loadThumb() {
+      try {
+        const cached = await idb.get(fileInfo.path, 'ThumbnailStore');
+        if (isMounted && cached) {
+          setThumbUrl(cached);
+        }
+      } catch (e) {}
+    }
+    loadThumb();
+    return () => { isMounted = false; };
+  }, [fileInfo.path]);
 
-  // 为分配到已有项提供“飞入”目标的 layoutId
+  // 渲染时优先使用缩略图
+  const displayUrl = thumbUrl || rawUrl;
+  
+  const displayTitle = fileInfo.name.replace(/\.[^/.]+$/, "");
   const finalLayoutId = (isSelected && animatingTargetId) ? animatingTargetId : fileInfo.path;
 
   return (
@@ -35,7 +54,6 @@ export function PhotoCard({ fileInfo, index, onContextMenu, isSelected, onToggle
         onNavigate({ type: 'photo', data: fileInfo });
       }}
       whileTap={{ scale: 0.98 }}
-      data-item-key={fileInfo.path}
       className={clsx(
         "relative flex flex-col cursor-pointer group rounded-xl overflow-visible",
         "bg-[#191a21] border border-white/5 shadow-lg transition-all duration-300",
@@ -44,33 +62,27 @@ export function PhotoCard({ fileInfo, index, onContextMenu, isSelected, onToggle
           : "hover:border-blue-500/30 hover:shadow-[0_0_40px_rgba(59,130,246,0.3)] hover:bg-[#1e1f28]"
       )}
     >
-      {/* ── Cover photo ── */}
-      <div className="relative w-full aspect-[3/2] overflow-hidden rounded-t-xl shrink-0">
-        {imgUrl ? (
+      <div className="relative w-full aspect-[3/2] overflow-hidden rounded-t-xl shrink-0 bg-neutral-900">
+        {displayUrl ? (
           <motion.img 
             layoutId={finalLayoutId}
-            src={imgUrl} 
+            src={displayUrl} 
             alt={fileInfo.name} 
             className={clsx(
                 "w-full h-full object-cover transition-transform duration-500 group-hover:scale-110",
                 isSelected && "brightness-90 opacity-80"
             )}
             transition={{ 
-              type: "spring",
-              stiffness: 220,
-              damping: 22,
-              mass: 1.1,
-              duration: 1.0
+              type: "spring", stiffness: 220, damping: 22, mass: 1.1, duration: 1.0
             }}
             loading="lazy"
           />
         ) : (
-          <div className="w-full h-full bg-neutral-900 flex items-center justify-center">
-            <Image className="text-neutral-700" size={28} />
+          <div className="w-full h-full flex items-center justify-center opacity-20">
+            <Image className="text-white" size={28} />
           </div>
         )}
 
-        {/* Selection Checkbox */}
         <div className={clsx(
           "absolute top-2 right-2 z-40 w-4 h-4 rounded-full border flex items-center justify-center transition-all duration-300",
           isSelected
@@ -85,9 +97,7 @@ export function PhotoCard({ fileInfo, index, onContextMenu, isSelected, onToggle
         </div>
       </div>
 
-      {/* ── Metadata body ── */}
       <div className="p-3 flex flex-col gap-1.5 relative">
-        {/* Title and Rating Row */}
         <div className="flex items-center justify-between gap-3 mt-1 min-w-0">
           <h3 className="text-white text-[11px] font-bold truncate leading-tight flex-1">
             {displayTitle}
@@ -120,14 +130,12 @@ export function PhotoCard({ fileInfo, index, onContextMenu, isSelected, onToggle
           </div>
         </div>
 
-        {/* Date Row */}
         <div className="flex items-center gap-1.5">
           <span className="text-[9px] text-neutral-500">
             {date ? format(date, 'MMMM d, yyyy') : 'Unknown Date'}
           </span>
         </div>
 
-        {/* Badge area: Fixed at bottom left */}
         <div className="mt-auto pt-1">
           <div className="flex items-center gap-1.5 px-1.5 py-0.5 rounded-md bg-blue-500/10 border border-blue-500/20 text-blue-400 w-fit">
             <Image size={10} strokeWidth={2.5} />

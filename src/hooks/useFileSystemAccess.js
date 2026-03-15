@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import * as idb from '../utils/idb';
 import { extractExifData } from '../utils/exifUtils';
+import { generateThumbnail } from '../utils/thumbnailUtils';
 
 /**
  * Handle recursive directory reading using the File System Access API
@@ -223,11 +224,21 @@ export function useFileSystemAccess() {
     // 处理新照片
     for (const f of newPhotos) {
       const exif = await extractExifData(f.handle);
+      
+      // 生成并存储缩略图
+      try {
+        const thumb = await generateThumbnail(f.handle);
+        await idb.set(f.path, thumb, 'ThumbnailStore');
+      } catch (thumbErr) {
+        console.warn(`为照片 ${f.name} 生成缩略图失败:`, thumbErr);
+      }
+
       updatedPhotos.push({
         photo_id: crypto.randomUUID(),
         file_name: f.path,
         timestamp: exif.date && exif.time ? `${exif.date}T${exif.time}` : new Date().toISOString(),
         date: exif.date || new Date().toISOString().split('T')[0],
+        time: exif.time || '',
         latitude: exif.latitude,
         longitude: exif.longitude,
         event_id: null
@@ -235,11 +246,23 @@ export function useFileSystemAccess() {
       hasChanges = true;
     }
 
-    // 处理缺失信息的照片 (需要从 files 中找到对应的 handle)
+    // 处理缺失信息或缩略图的照片
     for (const p of missingInfoPhotos) {
       const fileMatch = files.find(f => f.path.replace(/\\/g, '/') === p.file_name.replace(/\\/g, '/'));
       if (fileMatch) {
          const exif = await extractExifData(fileMatch.handle);
+         
+         // 检查并补全缩略图
+         const existingThumb = await idb.get(p.file_name, 'ThumbnailStore');
+         if (!existingThumb) {
+           try {
+             const thumb = await generateThumbnail(fileMatch.handle);
+             await idb.set(p.file_name, thumb, 'ThumbnailStore');
+           } catch (e) {
+             console.warn(`回填照片 ${p.file_name} 的缩略图失败:`, e);
+           }
+         }
+
          const idx = updatedPhotos.findIndex(up => up.photo_id === p.photo_id);
          if (idx !== -1) {
            updatedPhotos[idx] = {
