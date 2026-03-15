@@ -97,18 +97,17 @@ export function PhotoCard({ fileInfo, index, onContextMenu, isSelected, onToggle
         </div>
       </div>
 
-      <div className="p-3 flex flex-col gap-1.5 relative">
-        <div className="flex items-center justify-between gap-3 mt-1 min-w-0">
-          <h3 className="text-white text-[11px] font-bold truncate leading-tight flex-1">
+      <div className="p-2 flex flex-col gap-1 relative">
+        <div className="flex items-center justify-between gap-2 mt-0.5 min-w-0">
+          <h3 className="text-white text-[10px] font-bold truncate leading-tight flex-1">
             {displayTitle}
           </h3>
-          <div className="flex items-center gap-0.5 shrink-0">
+          <div className="flex items-center shrink-0">
             {[...Array(10)].map((_, i) => {
               const active = i < rating;
               return (
                 <button
                   key={i}
-                  title={`${i + 1}/10`}
                   onClick={(e) => {
                     e.stopPropagation();
                     const newRating = i + 1;
@@ -116,31 +115,20 @@ export function PhotoCard({ fileInfo, index, onContextMenu, isSelected, onToggle
                   }}
                   className={clsx(
                     "transition-all hover:scale-125 active:scale-95",
-                    active ? "text-red-500" : "text-white/20 hover:text-white/40"
+                    active ? "text-red-500" : "text-white/10 hover:text-white/30"
                   )}
                 >
-                  {active ? (
-                    <Heart size={10} fill="currentColor" strokeWidth={0} />
-                  ) : (
-                    <Heart size={10} strokeWidth={2} />
-                  )}
+                  <Heart size={8} fill={active ? "currentColor" : "none"} strokeWidth={active ? 0 : 2} />
                 </button>
               );
             })}
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5">
-          <span className="text-[9px] text-neutral-500">
-            {date ? format(date, 'MMMM d, yyyy') : 'Unknown Date'}
+        <div className="flex items-center gap-1.5 overflow-hidden">
+          <span className="text-[8px] text-neutral-600 truncate">
+            {date ? format(date, 'MMM d, yyyy') : 'Unknown'}
           </span>
-        </div>
-
-        <div className="mt-auto pt-1">
-          <div className="flex items-center gap-1.5 px-1.5 py-0.5 rounded-md bg-blue-500/10 border border-blue-500/20 text-blue-400 w-fit">
-            <Image size={10} strokeWidth={2.5} />
-            <span className="text-[8px] font-black uppercase tracking-wider">Photo</span>
-          </div>
         </div>
       </div>
     </motion.div>

@@ -8,7 +8,7 @@
  * @param {number} maxWidth 
  * @returns {Promise<string>} Data URL of the thumbnail
  */
-export async function generateThumbnail(fileHandle, maxWidth = 400) {
+export async function generateThumbnail(fileHandle, maxWidth = 250) {
   return new Promise(async (resolve, reject) => {
     try {
       const file = await fileHandle.getFile();
