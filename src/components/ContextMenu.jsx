@@ -2,7 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { PlusCircle, Info, Trash2, Tag, Move, Layers, ChevronRight, Briefcase, ImagePlus, Heart, MapPin } from 'lucide-react';
 import { useState } from 'react';
 
-export function ContextMenu({ menu, onClose, onAction, selectionCount, trips = [], events = [], categories = [], cities = [] }) {
+export function ContextMenu({ menu, onClose, onAction, selectionCount, trips = [], events = [], categories = [], cities = [], selectedTripId = null }) {
   const [activeSubmenu, setActiveSubmenu] = useState(null);
 
   if (!menu) return null;
@@ -11,7 +11,7 @@ export function ContextMenu({ menu, onClose, onAction, selectionCount, trips = [
   const targetType = menu.data?.type || 'photo';
 
   // Extract implicit trip_id from event if necessary
-  let currentTripId = menu.data?.trip_id;
+  let currentTripId = selectedTripId || menu.data?.trip_id;
   if (!currentTripId && targetType === 'photo' && menu.data?.event_id) {
       const parentEvent = events.find(e => e.event_id === menu.data.event_id);
       if (parentEvent?.trip_id) {
@@ -97,15 +97,20 @@ export function ContextMenu({ menu, onClose, onAction, selectionCount, trips = [
                 >
                   <p className="px-3 py-1.5 text-[9px] uppercase tracking-widest text-neutral-600 font-black">更新分类为</p>
                   <div className="max-h-[300px] overflow-y-auto custom-scrollbar">
-                    {categories.map(cat => (
-                      <button
-                        key={cat}
-                        onClick={() => handleAction('set-category', { category: cat })}
-                        className="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-blue-500/20 transition-all group text-left"
-                      >
-                        <span className="text-xs font-medium text-neutral-300 group-hover:text-white truncate">{cat}</span>
-                      </button>
-                    ))}
+                    {categories.map((cat, idx) => {
+                      const name = typeof cat === 'object' ? cat.name : cat;
+                      const color = typeof cat === 'object' ? cat.color : '#60a5fa';
+                      return (
+                        <button
+                          key={`${name}-${idx}`}
+                          onClick={() => handleAction('set-category', { category: name })}
+                          className="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-blue-500/20 transition-all group text-left"
+                        >
+                          <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                          <span className="text-xs font-medium text-neutral-300 group-hover:text-white truncate">{name}</span>
+                        </button>
+                      );
+                    })}
                   </div>
                 </motion.div>
               )}
@@ -141,15 +146,20 @@ export function ContextMenu({ menu, onClose, onAction, selectionCount, trips = [
                       <PlusCircle size={14} className="text-emerald-400" />
                       <span className="text-xs font-bold text-emerald-400">新建城市...</span>
                     </button>
-                    {cities.map(city => (
-                      <button
-                        key={city}
-                        onClick={() => handleAction('set-city', { city: city })}
-                        className="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-emerald-500/20 transition-all group text-left"
-                      >
-                        <span className="text-xs font-medium text-neutral-300 group-hover:text-white truncate">{city}</span>
-                      </button>
-                    ))}
+                    {cities.map((city, idx) => {
+                      const name = typeof city === 'object' ? city.name : city;
+                      const color = typeof city === 'object' ? city.color : '#10b981';
+                      return (
+                        <button
+                          key={`${name}-${idx}`}
+                          onClick={() => handleAction('set-city', { city: name })}
+                          className="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-emerald-500/20 transition-all group text-left"
+                        >
+                          <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                          <span className="text-xs font-medium text-neutral-300 group-hover:text-white truncate">{name}</span>
+                        </button>
+                      );
+                    })}
                     {cities.length === 0 && (
                       <p className="px-3 py-4 text-[10px] text-neutral-600 italic text-center">暂无保存城市</p>
                     )}

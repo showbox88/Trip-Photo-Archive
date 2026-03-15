@@ -6,19 +6,24 @@ import { generateThumbnail } from '../utils/thumbnailUtils';
 /**
  * Handle recursive directory reading using the File System Access API
  */
-async function getFilesFromDirectory(directoryHandle, path = '') {
+async function getFilesFromDirectory(directoryHandle, path = '', seen = new Set()) {
   let files = [];
   try {
-    // Attempt to iterate over the directory entries
     for await (const entry of directoryHandle.values()) {
+      const fullPath = `${path}${entry.name}`;
+      const lowerPath = fullPath.toLowerCase();
+      
+      if (seen.has(lowerPath)) continue;
+      
       if (entry.kind === 'file' && entry.name.match(/\.(jpe?g|png|heic|webp)$/i)) {
+        seen.add(lowerPath);
         files.push({
           handle: entry,
-          path: `${path}${entry.name}`,
+          path: fullPath,
           name: entry.name,
         });
       } else if (entry.kind === 'directory') {
-        const nestedFiles = await getFilesFromDirectory(entry, `${path}${entry.name}/`);
+        const nestedFiles = await getFilesFromDirectory(entry, `${fullPath}/`, seen);
         files.push(...nestedFiles);
       }
     }
@@ -36,7 +41,17 @@ export function useFileSystemAccess() {
     trips: [], 
     events: [], 
     photos: [],
-    categories: ['美食', '景点', '街景', '酒店', '交通', '自然', '人像', '购物', '其他'],
+    categories: [
+      { name: '美食', color: '#f87171' }, // red-400
+      { name: '景点', color: '#60a5fa' }, // blue-400
+      { name: '街景', color: '#34d399' }, // emerald-400
+      { name: '酒店', color: '#fb923c' }, // orange-400
+      { name: '交通', color: '#7dd3fc' }, // sky-400
+      { name: '自然', color: '#a78bfa' }, // violet-400
+      { name: '人像', color: '#f472b6' }, // pink-400
+      { name: '购物', color: '#fbbf24' }, // amber-400
+      { name: '其他', color: '#94a3b8' }  // slate-400
+    ],
     cities: [],
     tags: []
   });
@@ -102,9 +117,34 @@ export function useFileSystemAccess() {
       } catch (e) {
         dbFileHandle = await directoryHandle.getFileHandle('trip_database.json', { create: true });
         
-        // Initial sync with EXIF extraction
+        // 识别子文件夹并自动创建 Trip
+        const subfolders = new Set();
+        for await (const entry of directoryHandle.values()) {
+          if (entry.kind === 'directory' && entry.name !== '.gemini') {
+            subfolders.add(entry.name);
+          }
+        }
+
+        subfolders.forEach(folderName => {
+          if (!currentDb.trips.find(t => t.folder_name === folderName)) {
+            currentDb.trips.push({
+              trip_id: crypto.randomUUID(),
+              title: folderName,
+              folder_name: folderName,
+              date: new Date().toISOString().split('T')[0],
+              cover_photo_id: null
+            });
+          }
+        });
+
+        // Initial sync with EXIF extraction (AFTER Trips are identified)
         currentDb.photos = await Promise.all(files.map(async f => {
           const exif = await extractExifData(f.handle);
+          // 确定所属 Trip (基于第一级文件夹名)
+          const parts = f.path.split('/');
+          const folderName = parts.length > 1 ? parts[0] : null;
+          const trip = folderName ? currentDb.trips.find(t => t.folder_name === folderName) : null;
+
           return {
             photo_id: crypto.randomUUID(),
             file_name: f.path,
@@ -112,7 +152,8 @@ export function useFileSystemAccess() {
             date: exif.date || new Date().toISOString().split('T')[0],
             latitude: exif.latitude,
             longitude: exif.longitude,
-            event_id: null
+            event_id: null,
+            trip_id: trip ? trip.trip_id : null
           };
         }));
 
@@ -192,8 +233,69 @@ export function useFileSystemAccess() {
       setDbHandle(dbFileHandle);
       setDbContent(currentDb);
 
+      // 4. 增量检查子文件夹作为 Trip
+      let hasNewTrips = false;
+      const subfolders = new Set();
+      for await (const entry of directoryHandle.values()) {
+        if (entry.kind === 'directory' && entry.name !== '.gemini') {
+          subfolders.add(entry.name);
+        }
+      }
+
+      const updatedTrips = [...currentDb.trips];
+      subfolders.forEach(folderName => {
+        if (!updatedTrips.find(t => t.folder_name === folderName)) {
+          updatedTrips.push({
+            trip_id: crypto.randomUUID(),
+            title: folderName,
+            folder_name: folderName,
+            date: new Date().toISOString().split('T')[0],
+            cover_photo_id: null
+          });
+          hasNewTrips = true;
+        }
+      });
+
+      let finalDb = currentDb;
+      if (hasNewTrips) {
+        finalDb = { ...currentDb, trips: updatedTrips };
+        // 直接写入文件，不使用依赖 state 的 saveToDatabase，避免 race condition
+        const writable = await dbFileHandle.createWritable();
+        await writable.write(JSON.stringify(finalDb, null, 2));
+        await writable.close();
+        setDbContent(finalDb);
+        console.log('Auto-created trips from folders.');
+      }
+
+      // 5. 修复逻辑：确保存量照片如果属于子文件夹，则正确关联 trip_id
+      let reLinkedCount = 0;
+      const repairedPhotos = finalDb.photos.map(p => {
+        if (!p.trip_id) {
+          const parts = p.file_name.replace(/\\/g, '/').split('/');
+          const folderName = parts.length > 1 ? parts[0] : null;
+          if (folderName) {
+            const trip = finalDb.trips.find(t => t.folder_name === folderName);
+            if (trip) {
+              reLinkedCount++;
+              return { ...p, trip_id: trip.trip_id };
+            }
+          }
+        }
+        return p;
+      });
+
+      if (reLinkedCount > 0) {
+        console.log(`Repaired trip_id for ${reLinkedCount} photos.`);
+        finalDb = { ...finalDb, photos: repairedPhotos };
+        // 同步到文件
+        const writable = await dbFileHandle.createWritable();
+        await writable.write(JSON.stringify(finalDb, null, 2));
+        await writable.close();
+        setDbContent(finalDb);
+      }
+
       // Perform incremental sync for new photos or missing EXIF
-      await syncPhotosWithExif(files, currentDb, dbFileHandle);
+      await syncPhotosWithExif(files, finalDb, dbFileHandle);
 
     } catch (err) {
       console.error('Failed to restore workspace:', err);
@@ -213,10 +315,30 @@ export function useFileSystemAccess() {
    */
   const syncPhotosWithExif = async (files, currentDb, fileHandle) => {
     let hasChanges = false;
-    const existingPaths = new Set(currentDb.photos.map(p => p.file_name.replace(/\\/g, '/')));
+    const existingPaths = new Set(currentDb.photos.map(p => p.file_name.replace(/\\/g, '/').toLowerCase()));
+    
+    // Migration: ensure categories, cities, tags are object arrays
+    const migrateList = (list) => {
+      if (!list || !Array.isArray(list)) return [];
+      return list.map(item => typeof item === 'string' ? { name: item, color: '#60a5fa' } : item);
+    };
+
+    const categories = migrateList(currentDb.categories || [
+      { name: '美食', color: '#f87171' },
+      { name: '景点', color: '#60a5fa' },
+      { name: '街景', color: '#34d399' },
+      { name: '酒店', color: '#fb923c' },
+      { name: '交通', color: '#7dd3fc' },
+      { name: '自然', color: '#a78bfa' },
+      { name: '人像', color: '#f472b6' },
+      { name: '购物', color: '#fbbf24' },
+      { name: '其他', color: '#94a3b8' }
+    ]);
+    const cities = migrateList(currentDb.cities || []);
+    const tags = migrateList(currentDb.tags || []);
     
     // 1. 发现新照片
-    const newPhotos = files.filter(f => !existingPaths.has(f.path.replace(/\\/g, '/')));
+    const newPhotos = files.filter(f => !existingPaths.has(f.path.replace(/\\/g, '/').toLowerCase()));
     
     // 2. 检查旧照片是否缺失关键信息 (可选，暂不强制，避免大规模扫描性能问题)
     // 但如果用户说“没有信息”，可能是之前已经扫入库但没解析。
@@ -240,6 +362,11 @@ export function useFileSystemAccess() {
         console.warn(`为照片 ${f.name} 生成缩略图失败:`, thumbErr);
       }
 
+      // 确定所属 Trip
+      const parts = f.path.split('/');
+      const folderName = parts.length > 1 ? parts[0] : null;
+      const trip = folderName ? currentDb.trips.find(t => t.folder_name === folderName) : null;
+
       updatedPhotos.push({
         photo_id: crypto.randomUUID(),
         file_name: f.path,
@@ -248,7 +375,8 @@ export function useFileSystemAccess() {
         time: exif.time || '',
         latitude: exif.latitude,
         longitude: exif.longitude,
-        event_id: null
+        event_id: null,
+        trip_id: trip ? trip.trip_id : null
       });
       hasChanges = true;
     }
@@ -289,9 +417,9 @@ export function useFileSystemAccess() {
       const newDb = { 
         ...currentDb, 
         photos: updatedPhotos,
-        categories: currentDb.categories || ['美食', '景点', '街景', '酒店', '交通', '自然', '人像', '购物', '其他'],
-        cities: currentDb.cities || [],
-        tags: currentDb.tags || []
+        categories,
+        cities,
+        tags
       };
       const writable = await fileHandle.createWritable();
       await writable.write(JSON.stringify(newDb, null, 2));

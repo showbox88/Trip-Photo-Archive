@@ -6,10 +6,12 @@ import clsx from 'clsx';
 
 const STAGES = ['Planning', 'Completed', 'Ongoing', 'Canceled'];
 
-export function CreateTripModal({ isOpen, onClose, events, onCreate, initialSelectedIds = [], allPhotos = [] }) {
+export function CreateTripModal({ isOpen, onClose, events, metadata = {}, onCreate, initialSelectedIds = [], allPhotos = [] }) {
+  const categories = metadata.categories || [];
+  
   const [title, setTitle] = useState('');
   const [city, setCity] = useState('');
-  const [category, setCategory] = useState('旅行');
+  const [category, setCategory] = useState(categories[0]?.name || '旅行');
   const [rating, setRating] = useState(8);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -201,10 +203,9 @@ export function CreateTripModal({ isOpen, onClose, events, onCreate, initialSele
                           value={category}
                           onChange={(e) => setCategory(e.target.value)}
                         >
-                          <option value="旅行">休闲旅行</option>
-                          <option value="出差">商务出差</option>
-                          <option value="探险">户外探险</option>
-                          <option value="回乡">探亲回乡</option>
+                          {categories.map(cat => (
+                            <option key={cat.name} value={cat.name}>{cat.name}</option>
+                          ))}
                         </select>
                       </div>
                     </div>

@@ -35,12 +35,11 @@
 - [x] 浏览器兼容性确认：确定使用 Chrome/Edge 作为主要运行环境以利用完整的 File System Access API。
 - [x] 本地存储方案敲定：直接利用 File System Access API 读写项目所在地的原生 `trip_database.json` 文件进行本地硬持久化保存。
 - [x] 前端框架敲定：使用 React (Vite) + Tailwind CSS + Framer Motion + `@tanstack/react-virtual` 进行开发。
-- [x] **Notion 属性系统**：实现详细的元数据录入与灯箱展示。
-- [x] **层级管理交互**：实现基于 ContextMenu 的高效层级归档逻辑。
-- [x] **AI 迁移交接准备**：建立完整的项目说明文档 (`README`, `PROJECT_AI_CONTEXT`, `DATABASE_SCHEMA`)。
+- [x] **Notion 属性系统的深度实现**：实现了基于分类、城市和评分（心形 UI）的完整元数据体系。
+- [x] **高级过滤器集成**：在右上角实现了支持多选、逻辑可调（已确认为 OR 逻辑）且实时响应的智能过滤器。
+- [x] **交互体验的极致打磨**：实现了右键自动选中逻辑、Windows 路径大小写三层兼容去重、以及高保真毛玻璃卡片视觉。
+- [x] **AI 迁移交接准备**：建立并保持同步的项目说明文档 (`README`, `PROJECT_AI_CONTEXT`, `DATABASE_SCHEMA`)。
 
 ## 7. 版本修订记录
-- v1.0: 初始构思。
-- v2.0: 性能优化专题更新。
-- v2.1: Web 技术架构确立。明确了使用 Web 技术实现炫酷 CSS 特效的方针，并引入了 File System Access API 解决本地文件访问问题。
-- v2.2: (2026-03) 技术栈全面敲定为 React + Vite + Framer Motion + Tailwind，并确认以 Chromium 衍生浏览器为核心运行环境，JSON 持久化方案采用纯本地直写。
+- v1.0 - v2.2: 初始架构与基础功能开发。
+- v2.3: (2026-03-15) 过滤器架构重构完成。引入了右上角集成式过滤菜单，优化了批量分类与标记城市的交互流，彻底解决了 Windows 系统下的路径重复与元数据关联失效 Bug，并完成了视觉 Premium 化升级。

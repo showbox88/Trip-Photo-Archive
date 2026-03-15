@@ -5,11 +5,50 @@ import { useObjectUrl } from '../hooks/useObjectUrl';
 import clsx from 'clsx';
 import { format } from 'date-fns';
 
-export function DetailModal({ isOpen, onClose, type, item, allPhotos = [], onUpdate }) {
+export function DetailModal({ isOpen, onClose, type, item, allPhotos = [], metadata = {}, onUpdate }) {
   const [formData, setFormData] = useState({});
   const isTrip = type === 'trip';
   const isEvent = type === 'event';
   const isPhoto = type === 'photo';
+
+  const categories = metadata.categories || [];
+  const cities = metadata.cities || [];
+
+  // Helper to find color for a name
+  const getPropertyColor = (name, list) => {
+    const found = (list || []).find(it => (typeof it === 'string' ? it === name : it.name === name));
+    return found?.color || found?.hex || '#60a5fa'; // Default blue
+  };
+
+  const displayCities = useMemo(() => {
+    if (!item) return [];
+    if (isPhoto) return [formData.city].filter(Boolean);
+    
+    if (isEvent) {
+      // Aggregate cities from all photos in this event
+      const eventPhotos = allPhotos.filter(p => String(p.event_id) === String(item.event_id));
+      const citiesFromPhotos = eventPhotos.map(p => p.city).filter(Boolean);
+      return Array.from(new Set(citiesFromPhotos));
+    }
+
+    if (isTrip) {
+      // Aggregate cities from all events in this trip
+      const tripEvents = (metadata.events || []).filter(e => String(e.trip_id) === String(item.trip_id));
+      
+      // Also need to consider photos directly in trip but not in events
+      const tripPhotos = allPhotos.filter(p => String(p.trip_id) === String(item.trip_id));
+      
+      const citiesFromEvents = tripEvents.flatMap(e => {
+          // If we want it truly transitive, we should look at photos of these events
+          const ePhotos = allPhotos.filter(p => String(p.event_id) === String(e.event_id));
+          return [e.city, ...ePhotos.map(p => p.city)];
+      });
+      const citiesFromDirectPhotos = tripPhotos.map(p => p.city);
+      
+      return Array.from(new Set([...citiesFromEvents, ...citiesFromDirectPhotos].filter(Boolean)));
+    }
+    return [];
+  }, [type, item, allPhotos, metadata.events, formData.city, item?.event_id, item?.trip_id, isPhoto, isEvent, isTrip]);
 
   // 根据类型配置主题
   const theme = {
@@ -209,44 +248,88 @@ export function DetailModal({ isOpen, onClose, type, item, allPhotos = [], onUpd
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-500 mb-2 ml-1">分类</label>
-                    {isPhoto ? (
-                      <div className="relative group">
-                        <select
-                          className="w-full h-[54px] bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-sm font-bold text-white outline-none appearance-none cursor-pointer focus:border-white/20 transition-all"
-                          value={formData.category || ''}
-                          onChange={(e) => handleChange('category', e.target.value)}
+                  {!isTrip && (
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-500 mb-2 ml-1">分类</label>
+                      <div className="relative group/select">
+                        <div 
+                          className="w-full h-[54px] bg-white/5 border border-white/10 rounded-2xl px-4 flex items-center gap-3 transition-all group-hover/select:border-white/20"
+                          style={{ 
+                            backgroundColor: formData.category ? `${getPropertyColor(formData.category, categories)}15` : undefined,
+                            borderColor: formData.category ? `${getPropertyColor(formData.category, categories)}40` : undefined
+                          }}
                         >
-                          <option value="" disabled className="bg-[#1a1b1e]">选择分类...</option>
-                          <option value="美食" className="bg-[#1a1b1e]">美食</option>
-                          <option value="景点" className="bg-[#1a1b1e]">景点</option>
-                          <option value="街景" className="bg-[#1a1b1e]">街景</option>
-                          <option value="酒店" className="bg-[#1a1b1e]">酒店</option>
-                          <option value="交通" className="bg-[#1a1b1e]">交通</option>
-                          <option value="自然" className="bg-[#1a1b1e]">自然</option>
-                          <option value="人像" className="bg-[#1a1b1e]">人像</option>
-                          <option value="购物" className="bg-[#1a1b1e]">购物</option>
-                          <option value="其他" className="bg-[#1a1b1e]">其他</option>
-                        </select>
-                        <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-500 pointer-events-none" />
+                          <div 
+                            className="w-2.5 h-2.5 rounded-full shrink-0 shadow-[0_0_10px_rgba(0,0,0,0.3)]" 
+                            style={{ backgroundColor: getPropertyColor(formData.category, categories) }}
+                          />
+                          <select
+                            className="flex-1 bg-transparent border-none text-sm font-bold text-white outline-none appearance-none cursor-pointer"
+                            value={formData.category || ''}
+                            onChange={(e) => handleChange('category', e.target.value)}
+                          >
+                            <option value="" disabled className="bg-[#1a1b1e]">选择分类...</option>
+                            {categories.map(cat => (
+                              <option key={cat.name} value={cat.name} className="bg-[#1a1b1e]">{cat.name}</option>
+                            ))}
+                          </select>
+                          <ChevronDown size={14} className="text-neutral-500 pointer-events-none" />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  <div className={clsx(isTrip && "col-span-full")}>
+                    <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-500 mb-2 ml-1">城市</label>
+                    {isPhoto ? (
+                      <div className="relative group/select">
+                        <div 
+                          className="w-full h-[54px] bg-white/5 border border-white/10 rounded-2xl px-4 flex items-center gap-3 transition-all group-hover/select:border-white/20"
+                          style={{ 
+                            backgroundColor: formData.city ? `${getPropertyColor(formData.city, metadata.cities)}15` : undefined,
+                            borderColor: formData.city ? `${getPropertyColor(formData.city, metadata.cities)}40` : undefined
+                          }}
+                        >
+                          <div 
+                            className="w-2.5 h-2.5 rounded-full shrink-0 shadow-[0_0_10px_rgba(0,0,0,0.3)]" 
+                            style={{ backgroundColor: getPropertyColor(formData.city, metadata.cities) }}
+                          />
+                          <select
+                            className="flex-1 bg-transparent border-none text-sm font-bold text-white outline-none appearance-none cursor-pointer"
+                            value={formData.city || ''}
+                            onChange={(e) => handleChange('city', e.target.value)}
+                          >
+                            <option value="" disabled className="bg-[#1a1b1e]">选择城市...</option>
+                            {(metadata.cities || []).map(city => (
+                              <option key={city.name} value={city.name} className="bg-[#1a1b1e]">{city.name}</option>
+                            ))}
+                            {formData.city && !(metadata.cities || []).some(c => c.name === formData.city) && (
+                               <option value={formData.city} className="bg-[#1a1b1e]">{formData.city}</option>
+                            )}
+                          </select>
+                          <ChevronDown size={14} className="text-neutral-500 pointer-events-none" />
+                        </div>
                       </div>
                     ) : (
-                      <input
-                        type="text"
-                        className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-4 text-sm font-bold text-white outline-none focus:border-white/20"
-                        value={formData.category || ''}
-                        onChange={(e) => handleChange('category', e.target.value)}
-                      />
+                      <div className="flex flex-wrap gap-2 p-2 min-h-[54px] bg-white/5 border border-white/10 rounded-2xl">
+                        {displayCities.length > 0 ? (
+                          displayCities.map(cityName => (
+                            <span 
+                              key={cityName}
+                              className="px-3 py-1 bg-white/10 rounded-full text-xs font-bold text-white flex items-center gap-2 border border-white/5"
+                            >
+                              <div 
+                                className="w-1.5 h-1.5 rounded-full" 
+                                style={{ backgroundColor: getPropertyColor(cityName, metadata.cities) }}
+                              />
+                              {cityName}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-xs text-neutral-600 italic px-2 py-2">暂无关联城市</span>
+                        )}
+                      </div>
                     )}
                   </div>
-                  <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-500 mb-2 ml-1">城市</label>
-                    <input
-                      type="text"
-                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-4 text-sm font-bold text-white outline-none focus:border-white/20"
-                      value={formData.city || ''}
-                      onChange={(e) => handleChange('city', e.target.value)}
-                    />
                   </div>
                 </div>
               </div>
@@ -333,34 +416,36 @@ export function DetailModal({ isOpen, onClose, type, item, allPhotos = [], onUpd
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 text-neutral-400">
-                  <div className="flex flex-col">
-                    <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-500 mb-2 ml-1">坐标 (LAT)</label>
-                    <div className="relative group">
-                      <MapPin size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 group-focus-within:text-white transition-colors" />
-                      <input
-                        type="text"
-                        placeholder="0.0000"
-                        className="w-full bg-white/5 border border-white/10 rounded-2xl pl-10 pr-4 py-4 text-[11px] font-bold text-white outline-none focus:border-white/20 transition-all bg-transparent"
-                        value={formData.latitude || ''}
-                        onChange={(e) => handleChange('latitude', e.target.value)}
-                      />
+                  {!isTrip && (
+                    <div className="grid grid-cols-2 gap-3 text-neutral-400">
+                      <div className="flex flex-col">
+                        <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-500 mb-2 ml-1">坐标 (LAT)</label>
+                        <div className="relative group">
+                          <MapPin size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 group-focus-within:text-white transition-colors" />
+                          <input
+                            type="text"
+                            placeholder="0.0000"
+                            className="w-full bg-white/5 border border-white/10 rounded-2xl pl-10 pr-4 py-4 text-[11px] font-bold text-white outline-none focus:border-white/20 transition-all bg-transparent"
+                            value={formData.latitude || ''}
+                            onChange={(e) => handleChange('latitude', e.target.value)}
+                          />
+                        </div>
+                      </div>
+                      <div className="flex flex-col">
+                        <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-500 mb-2 ml-1">坐标 (LNG)</label>
+                        <div className="relative group">
+                          <MapPin size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 group-focus-within:text-white transition-colors" />
+                          <input
+                            type="text"
+                            placeholder="0.0000"
+                            className="w-full bg-white/5 border border-white/10 rounded-2xl pl-10 pr-4 py-4 text-[11px] font-bold text-white outline-none focus:border-white/20 transition-all bg-transparent"
+                            value={formData.longitude || ''}
+                            onChange={(e) => handleChange('longitude', e.target.value)}
+                          />
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex flex-col">
-                    <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-500 mb-2 ml-1">坐标 (LNG)</label>
-                    <div className="relative group">
-                      <MapPin size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 group-focus-within:text-white transition-colors" />
-                      <input
-                        type="text"
-                        placeholder="0.0000"
-                        className="w-full bg-white/5 border border-white/10 rounded-2xl pl-10 pr-4 py-4 text-[11px] font-bold text-white outline-none focus:border-white/20 transition-all bg-transparent"
-                        value={formData.longitude || ''}
-                        onChange={(e) => handleChange('longitude', e.target.value)}
-                      />
-                    </div>
-                  </div>
-                </div>
+                  )}
               </div>
 
               {/* Right Column: Tags & Notes */}

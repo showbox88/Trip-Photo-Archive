@@ -20,25 +20,31 @@
 | `trip_id` | UUID? | 所属行程 ID。若为 null 则表示独立事件。 |
 | `title` | String | 事件名称 |
 | `city` | String | 具体城市/地点 |
-| `category` | String | `Sightseeing`, `Dining`, `Transport`, `Housing`, `Shopping` |
-| `rate` | Number | 1-5 评分 |
-| `notes` | String | 详细回忆笔记 (Markdown 支持预留) |
+| `category` | String | 业务分类（如：美食、景点、交通等） |
+| `rating` | Number | 1-10 评分 |
+| `notes` | String | 详细回忆笔记 (Markdown 支持) |
 | `date` | Date String | 事件发生日期 |
-| `total_spending`| Number | 消费金额 (预留) |
+| `spending`| Number | 消费金额 |
 | `currency` | String | 货币类型 (默认 CNY) |
 
 ## `photos` (照片表)
 | 字段 | 类型 | 说明 |
 | :--- | :--- | :--- |
 | `photo_id` | UUID | 内部唯一 ID |
-| `file_name` | String | 相对文件夹根目录的路径（作为与 handle 关联的凭据） |
-| `timestamp` | ISO String | 录入/扫描时间 |
-| `event_id` | UUID? | 所属事件 ID。 |
+| `file_name` | String | 相对文件夹根目录的路径（主要索引凭据） |
+| `timestamp` | ISO String | EXIF/拍摄时间 |
+| `date` | Date String | 归一化日期 (YYYY-MM-DD) |
+| `event_id` | UUID? | 所属事件 ID |
+| `trip_id` | UUID? | 所属行程 ID（冗余存储以便快速查询） |
+| `city` | String | 照片关联城市 |
+| `category` | String | 照片关联分类 |
+| `rating` | Number | 1-10 评分 |
 
 ## 关系逻辑
-1. `Trip` -> `Event` (1对多): 通过 `event.trip_id` 关联。
-2. `Event` -> `Photo` (1对多): 通过 `photo.event_id` 关联。
-3. `Photo` -> `Trip`: 间接关联。
+1. `Trip` 主表：管理一级文件夹。
+2. `Event` 被 `Trip` 包含：通过 `event.trip_id` 关联。
+3. `Photo` 被 `Event` 或 `Trip` 包含：通过 `photo.event_id` 或 `photo.trip_id` 直接关联。
+4. **实时过滤**：基于 `photo.category` 与 `photo.city` 的 null 状态实现智能过滤器。
 
 ---
 *警告：手动修改 JSON 需确保 UUID 的唯一性和引用完整性。*

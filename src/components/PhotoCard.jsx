@@ -6,7 +6,14 @@ import { Image, Heart } from 'lucide-react';
 import { format } from 'date-fns';
 import clsx from 'clsx';
 
-export const PhotoCard = memo(function PhotoCard({ fileInfo, index, onContextMenu, isSelected, onToggleSelection, onNavigate, onUpdate, animatingTargetId }) {
+export const PhotoCard = memo(function PhotoCard({ fileInfo, index, onContextMenu, isSelected, onToggleSelection, onNavigate, onUpdate, animatingTargetId, metadata }) {
+  const categories = metadata?.categories || [];
+  const cities = metadata?.cities || [];
+
+  const getPropertyColor = (name, list) => {
+    const found = (list || []).find(it => (typeof it === 'string' ? it === name : it.name === name));
+    return found?.color || found?.hex || '#60a5fa';
+  };
   const [thumbUrl, setThumbUrl] = useState(null);
   const rawUrl = useObjectUrl(fileInfo.handle);
   
@@ -126,6 +133,43 @@ export const PhotoCard = memo(function PhotoCard({ fileInfo, index, onContextMen
               );
             })}
           </div>
+        </div>
+
+        <div className="flex items-center gap-1.5 overflow-hidden">
+          {fileInfo.category && (
+            <div 
+              className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-white/5 border border-white/5 max-w-[50%] overflow-hidden backdrop-blur-sm"
+              style={{ 
+                backgroundColor: `${getPropertyColor(fileInfo.category, categories)}15`,
+                borderColor: `${getPropertyColor(fileInfo.category, categories)}40`
+              }}
+            >
+              <div 
+                className="w-1.5 h-1.5 rounded-full shrink-0 shadow-[0_0_8px_rgba(255,255,255,0.3)]" 
+                style={{ backgroundColor: getPropertyColor(fileInfo.category, categories) }}
+              />
+              <span className="text-[10px] text-white/95 font-black truncate tracking-wide">
+                {fileInfo.category}
+              </span>
+            </div>
+          )}
+          {fileInfo.city && (
+            <div 
+              className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-white/5 border border-white/5 max-w-[50%] overflow-hidden backdrop-blur-sm"
+              style={{ 
+                backgroundColor: `${getPropertyColor(fileInfo.city, cities)}15`,
+                borderColor: `${getPropertyColor(fileInfo.city, cities)}40`
+              }}
+            >
+              <div 
+                className="w-1.5 h-1.5 rounded-full shrink-0 shadow-[0_0_8px_rgba(255,255,255,0.3)]" 
+                style={{ backgroundColor: getPropertyColor(fileInfo.city, cities) }}
+              />
+              <span className="text-[10px] text-white/95 font-black truncate tracking-wide">
+                {fileInfo.city}
+              </span>
+            </div>
+          )}
         </div>
 
         <div className="flex items-center">

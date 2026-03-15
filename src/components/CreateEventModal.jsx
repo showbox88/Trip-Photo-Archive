@@ -1,15 +1,15 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Heart, X, Calendar, Tags, CheckCircle2, Layers, MapPin, Star, MessageSquare } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useObjectUrl } from '../hooks/useObjectUrl';
 import clsx from 'clsx';
 
-const CATEGORIES = ['Sightseeing', 'Food', 'Transport', 'Hotel', 'Shopping', 'Other'];
-
-export function CreateEventModal({ isOpen, onClose, photos, onCreate }) {
+export function CreateEventModal({ isOpen, onClose, photos, metadata = {}, onCreate }) {
+  const categories = metadata.categories || [];
+  
   const [title, setTitle] = useState('');
   const [city, setCity] = useState('');
-  const [category, setCategory] = useState('Sightseeing');
+  const [category, setCategory] = useState(categories[0]?.name || 'Sightseeing');
   const [rating, setRating] = useState(8);
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [spending, setSpending] = useState(0);
@@ -18,6 +18,15 @@ export function CreateEventModal({ isOpen, onClose, photos, onCreate }) {
   const [longitude, setLongitude] = useState('');
   const [tags, setTags] = useState('');
   const [notes, setNotes] = useState('');
+  
+  // Prefill city from photos integration
+  useEffect(() => {
+    const photoCities = photos.map(p => p.city).filter(Boolean);
+    if (photoCities.length > 0) {
+      const uniqueCities = Array.from(new Set(photoCities));
+      setCity(uniqueCities.join(', '));
+    }
+  }, [photos]);
 
   if (!isOpen || !photos || photos.length === 0) return null;
 
@@ -190,8 +199,8 @@ export function CreateEventModal({ isOpen, onClose, photos, onCreate }) {
                         value={category}
                         onChange={(e) => setCategory(e.target.value)}
                       >
-                        {CATEGORIES.map(cat => (
-                          <option key={cat} value={cat}>{cat}</option>
+                        {categories.map(cat => (
+                          <option key={cat.name} value={cat.name}>{cat.name}</option>
                         ))}
                       </select>
                     </div>

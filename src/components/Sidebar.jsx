@@ -1,4 +1,12 @@
 import { motion } from 'framer-motion';
+
+const Plus = ({ size, className }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <line x1="12" y1="5" x2="12" y2="19"></line>
+    <line x1="5" y1="12" x2="19" y2="12"></line>
+  </svg>
+);
+
 import { 
   Image, 
   Map, 
@@ -8,11 +16,13 @@ import {
   Archive,
   ChevronRight,
   MoreHorizontal,
-  Settings
+  Settings,
+  Tag,
+  MapPin
 } from 'lucide-react';
 import clsx from 'clsx';
 
-export function Sidebar({ dbContent, activeFilter, onFilterChange }) {
+export function Sidebar({ dbContent, activeFilter, onFilterChange, photos = [] }) {
   const trips = dbContent.trips || [];
   const events = dbContent.events || [];
   
@@ -60,6 +70,7 @@ export function Sidebar({ dbContent, activeFilter, onFilterChange }) {
           <NavItem 
             icon={Image} 
             label="All Memories" 
+            count={photos.length}
             isActive={activeFilter.type === 'all'}
             onClick={() => onFilterChange({ type: 'all' })}
           />
@@ -72,6 +83,7 @@ export function Sidebar({ dbContent, activeFilter, onFilterChange }) {
           <NavItem 
             icon={Star} 
             label="Favorites" 
+            count={photos.filter(p => p.rating >= 9).length}
             isActive={activeFilter.type === 'favorites'}
             onClick={() => onFilterChange({ type: 'favorites' })}
           />
@@ -141,9 +153,3 @@ export function Sidebar({ dbContent, activeFilter, onFilterChange }) {
   );
 }
 
-const Plus = ({ size, className }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <line x1="12" y1="5" x2="12" y2="19"></line>
-    <line x1="5" y1="12" x2="19" y2="12"></line>
-  </svg>
-);

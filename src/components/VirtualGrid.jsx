@@ -2,9 +2,10 @@ import { useRef, useState, useEffect, useMemo } from 'react';
 import { PhotoCard } from './PhotoCard';
 import { CollectionCard } from './CollectionCard';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus as PlusIcon } from 'lucide-react';
+import { Plus as PlusIcon, CheckCircle2, Circle } from 'lucide-react';
+import clsx from 'clsx';
 
-export function VirtualGrid({ items, onContextMenu, selectedIds, onToggleSelection, onNavigate, onUpdateItem, onUpdateTrip, animatingTargetId }) {
+export function VirtualGrid({ items, onContextMenu, selectedIds, onToggleSelection, onToggleDateSelection, onNavigate, onUpdateItem, onUpdateTrip, animatingTargetId, metadata }) {
   const parentRef = useRef(null);
   const gridRef = useRef(null);
   
@@ -160,6 +161,54 @@ export function VirtualGrid({ items, onContextMenu, selectedIds, onToggleSelecti
             const itemKey = item.type === 'photo' ? item.path : `${item.type}:${item.id}`;
             const isSelected = selectedIds.has(itemKey);
 
+            if (item.type === 'date-header') {
+              const photosOnDate = items.filter(p => p.type === 'photo' && p.date === item.date);
+              const selectedOnDate = photosOnDate.filter(p => selectedIds.has(p.path));
+              const isAllSelected = photosOnDate.length > 0 && selectedOnDate.length === photosOnDate.length;
+              const isPartialSelected = selectedOnDate.length > 0 && selectedOnDate.length < photosOnDate.length;
+
+              return (
+                <div 
+                  key={itemKey}
+                  className="col-span-full py-8 first:pt-0 sticky top-0 z-50 bg-black/5 backdrop-blur-md -mx-10 px-10 mb-4 flex items-center gap-4 border-b border-white/5 group/header"
+                >
+                  <div className="flex items-center gap-4">
+                    <h2 className="text-3xl font-light tracking-tight text-white/90">
+                      {item.title}
+                    </h2>
+                    
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onToggleDateSelection?.(item.date, !isAllSelected);
+                      }}
+                      className={clsx(
+                        "flex items-center gap-2 px-3 py-1 rounded-full border transition-all",
+                        isAllSelected 
+                          ? "bg-blue-600/20 border-blue-500/50 text-blue-400" 
+                          : (isPartialSelected ? "bg-white/5 border-white/20 text-blue-400/70" : "bg-white/5 border-white/10 text-neutral-500 hover:border-white/20 hover:text-neutral-300 opacity-0 group-hover/header:opacity-100")
+                      )}
+                    >
+                      {isAllSelected ? (
+                        <CheckCircle2 size={16} />
+                      ) : (
+                        <Circle size={16} />
+                      )}
+                      <span className="text-[10px] font-bold uppercase tracking-wider">
+                        {isAllSelected ? '已全选' : (isPartialSelected ? '部分选中' : '全选')}
+                      </span>
+                    </button>
+
+                    <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">
+                      {photosOnDate.length} 张照片
+                    </span>
+                  </div>
+                  
+                  <div className="flex-1 h-px bg-gradient-to-r from-white/10 to-transparent" />
+                </div>
+              );
+            }
+
             if (item.type === 'photo') {
               return (
                 <PhotoCard
@@ -172,6 +221,7 @@ export function VirtualGrid({ items, onContextMenu, selectedIds, onToggleSelecti
                   onUpdate={updateHandler}
                   fileInfo={item}
                   animatingTargetId={animatingTargetId}
+                  metadata={metadata}
                 />
               );
             }

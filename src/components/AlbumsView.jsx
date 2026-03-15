@@ -7,7 +7,7 @@ import { format } from 'date-fns';
 
 function TripCard({ trip, photos, associatedEvents, onNavigate, onContextMenu, onUpdateTrip }) {
   const coverPhoto = trip.cover_photo_id 
-    ? photos.find(p => p.path === trip.cover_photo_id) || (photos.length > 0 ? photos[0] : null)
+    ? photos.find(p => p.path.replace(/\\/g, '/') === trip.cover_photo_id.replace(/\\/g, '/')) || (photos.length > 0 ? photos[0] : null)
     : (photos.length > 0 ? photos[0] : null);
   const imgUrl = useObjectUrl(coverPhoto?.handle);
   
@@ -22,10 +22,10 @@ function TripCard({ trip, photos, associatedEvents, onNavigate, onContextMenu, o
   // Count total photos
   const photoCount = photos.length;
   
-  // Get distinct locations (cities)
+  // Get distinct locations (cities) aggregated from events and direct photos
   const cities = Array.from(new Set([
-    trip.city, 
-    ...associatedEvents.map(e => e.city)
+    ...associatedEvents.map(e => e.city),
+    ...photos.map(p => p.city)
   ].filter(Boolean)));
   const locationString = cities.length > 0 ? cities.join(', ') : 'Unknown Location';
 
