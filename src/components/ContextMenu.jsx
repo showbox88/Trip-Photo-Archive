@@ -49,6 +49,22 @@ export function ContextMenu({ menu, onClose, onAction, selectionCount, trips = [
     : "absolute left-full top-0 ml-2";
   const subMenuAnimX = showSubmenuOnLeft ? 10 : -10;
 
+  // New logic for multi-column city layout
+  // Chunk cities into groups of 7 (first chunk includes the 'Add New City' button)
+  const rowsPerColumn = 7;
+  const cityChunks = [];
+  const allCityItems = [...cities];
+  
+  // Create virtual columns
+  // First column: Add New City + first 6 cities
+  const firstCol = [{ type: 'add' }, ...allCityItems.slice(0, 6)];
+  cityChunks.push(firstCol);
+  
+  // Subsequent columns: 7 cities each
+  for (let i = 6; i < allCityItems.length; i += 7) {
+    cityChunks.push(allCityItems.slice(i, i + 7));
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.95, y: -10 }}
@@ -150,76 +166,47 @@ export function ContextMenu({ menu, onClose, onAction, selectionCount, trips = [
                   initial={{ opacity: 0, x: subMenuAnimX }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: subMenuAnimX }}
-                  className={`${subMenuPosClass} min-w-[160px] bg-[#1a1b1e]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl p-2 flex flex-col gap-1 ring-1 ring-black/50`}
+                  className={`${subMenuPosClass} min-w-max bg-[#1a1b1e]/95 backdrop-blur-3xl border border-white/10 rounded-[2rem] shadow-2xl p-4 flex flex-col gap-2 ring-1 ring-black/50`}
                 >
-                  <p className="px-3 py-1.5 text-[9px] uppercase tracking-widest text-neutral-600 font-black">
+                  <p className="px-3 py-1 text-[9px] uppercase tracking-widest text-neutral-600 font-black">
                     {t('app.context.updateCity')}
                   </p>
-                  <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
-                    <button
-                      onClick={() => handleAction('create-city')}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 transition-all group text-left mb-1"
-                    >
-                      <PlusCircle size={14} className="text-emerald-400" />
-                      <span className="text-xs font-bold text-emerald-400">
-                        {t('app.context.addNewCity')}...
-                      </span>
-                    </button>
-                    {cities.slice(0, cities.length > 7 ? 6 : cities.length).map((city, idx) => {
-                      const name = typeof city === 'object' ? city.name : city;
-                      const color = typeof city === 'object' ? city.color : '#10b981';
-                      return (
-                        <button
-                          key={`${name}-${idx}`}
-                          onClick={() => handleAction('set-city', { city: name })}
-                          className="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-emerald-500/20 transition-all group text-left"
-                        >
-                          <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
-                          <span className="text-xs font-medium text-neutral-300 group-hover:text-white truncate">{name}</span>
-                        </button>
-                      );
-                    })}
-
-                    {cities.length > 7 && (
-                      <div className="relative overflow-visible">
-                        <button
-                          onMouseEnter={() => setActiveSubmenu('city-more')}
-                          className="w-full flex items-center justify-between gap-3 px-3 py-2 rounded-xl hover:bg-emerald-500/20 transition-all group text-left"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="w-2 h-2 rounded-full shrink-0 bg-neutral-600 group-hover:bg-emerald-400" />
-                            <span className="text-xs font-medium text-neutral-300 group-hover:text-white">{t('app.context.more')}</span>
-                          </div>
-                          <ChevronRight size={14} className="text-neutral-600 group-hover:text-emerald-400" />
-                        </button>
-
-                        <AnimatePresence>
-                          {activeSubmenu === 'city-more' && (
-                            <motion.div
-                              initial={{ opacity: 0, x: subMenuAnimX }}
-                              animate={{ opacity: 1, x: 0 }}
-                              exit={{ opacity: 0, x: subMenuAnimX }}
-                              className={`${subMenuPosClass} min-w-[160px] bg-[#1a1b1e]/98 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl p-2 flex flex-col gap-1 ring-1 ring-black/50`}
+                  
+                  {/* Multi-column Layout */}
+                  <div className="flex gap-4">
+                    {cityChunks.map((chunk, colIdx) => (
+                      <div key={colIdx} className="flex flex-col gap-1 min-w-[150px]">
+                        {chunk.map((item, rowIdx) => {
+                          if (item.type === 'add') {
+                            return (
+                              <button
+                                key="add-city-btn"
+                                onClick={() => handleAction('create-city')}
+                                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 transition-all group text-left mb-1"
+                              >
+                                <PlusCircle size={14} className="text-emerald-400" />
+                                <span className="text-xs font-bold text-emerald-400">
+                                  {t('app.context.addNewCity')}...
+                                </span>
+                              </button>
+                            );
+                          }
+                          
+                          const name = typeof item === 'object' ? item.name : item;
+                          const color = typeof item === 'object' ? item.color : '#10b981';
+                          return (
+                            <button
+                              key={`${name}-${colIdx}-${rowIdx}`}
+                              onClick={() => handleAction('set-city', { city: name })}
+                              className="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-emerald-500/20 transition-all group text-left"
                             >
-                              {cities.slice(6).map((city, idx) => {
-                                const name = typeof city === 'object' ? city.name : city;
-                                const color = typeof city === 'object' ? city.color : '#10b981';
-                                return (
-                                  <button
-                                    key={`${name}-${idx}-more`}
-                                    onClick={() => handleAction('set-city', { city: name })}
-                                    className="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-emerald-500/20 transition-all group text-left"
-                                  >
-                                    <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
-                                    <span className="text-xs font-medium text-neutral-300 group-hover:text-white truncate">{name}</span>
-                                  </button>
-                                );
-                              })}
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
+                              <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                              <span className="text-xs font-medium text-neutral-300 group-hover:text-white truncate max-w-[120px]">{name}</span>
+                            </button>
+                          );
+                        })}
                       </div>
-                    )}
+                    ))}
                   </div>
                 </motion.div>
               )}
