@@ -1,9 +1,11 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { PlusCircle, Info, Trash2, Tag, Move, Layers, ChevronRight, Briefcase, ImagePlus, Heart, MapPin } from 'lucide-react';
 import { useState } from 'react';
+import clsx from 'clsx';
 
 export function ContextMenu({ menu, onClose, onAction, selectionCount, trips = [], events = [], categories = [], cities = [], selectedTripId = null, t }) {
   const [activeSubmenu, setActiveSubmenu] = useState(null);
+  const [hoveredRating, setHoveredRating] = useState(null);
 
   if (!menu) return null;
 
@@ -55,7 +57,10 @@ export function ContextMenu({ menu, onClose, onAction, selectionCount, trips = [
       transition={{ duration: 0.1 }}
       className="fixed z-[100] min-w-[220px] bg-[#1a1b1e]/90 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl p-2 flex flex-col gap-1 ring-1 ring-black/50"
       style={{ top: finalY, left: finalX }}
-      onMouseLeave={() => setActiveSubmenu(null)}
+      onMouseLeave={() => {
+        setActiveSubmenu(null);
+        setHoveredRating(null);
+      }}
     >
       <div className="px-3 py-2 border-b border-white/5 mb-1">
         <p className="text-[10px] uppercase tracking-widest text-neutral-500 font-bold">
@@ -70,7 +75,7 @@ export function ContextMenu({ menu, onClose, onAction, selectionCount, trips = [
       {targetType === 'photo' && (
         <>
           <button
-            onClick={() => handleAction('create-event')}
+            onClick={() => handleAction('create-event', { skipModal: true })}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 transition-all group text-orange-400"
           >
             <PlusCircle size={18} className="group-hover:scale-110 transition-transform" />
@@ -200,26 +205,56 @@ export function ContextMenu({ menu, onClose, onAction, selectionCount, trips = [
                   initial={{ opacity: 0, x: subMenuAnimX }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: subMenuAnimX }}
-                  className={`${subMenuPosClass} min-w-[210px] bg-[#1a1b1e]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl p-2 flex flex-col gap-1 ring-1 ring-black/50`}
+                  className={`${subMenuPosClass} min-w-[240px] bg-[#1a1b1e]/98 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl p-2 flex flex-col gap-1 ring-1 ring-black/50`}
                 >
                   <p className="px-3 py-1.5 text-[9px] uppercase tracking-widest text-neutral-600 font-black">
                     {t('app.context.updateRating')}
                   </p>
-                  <div className="flex flex-col gap-2 p-2 bg-white/5 rounded-xl border border-white/5 mx-1">
-                    <div className="flex items-center gap-1 justify-between px-1">
+                  
+                  {/* Rating Container with Orange Border 'Long Bar' Style */}
+                  <div 
+                    className="flex flex-col gap-2 p-3 bg-orange-500/5 rounded-xl border border-orange-500/40 mx-1 relative overflow-hidden group/rating-box"
+                    onMouseLeave={() => setHoveredRating(null)}
+                  >
+                    {/* Background Progress Bar (The 'Long Bar') */}
+                    <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
+                       <motion.div 
+                          className="h-full bg-orange-500/10 border-r border-orange-500/30"
+                          initial={{ width: 0 }}
+                          animate={{ width: hoveredRating ? `${(hoveredRating / 10) * 100}%` : 0 }}
+                       />
+                    </div>
+
+                    <div className="flex items-center gap-1 justify-between px-1 relative z-10">
                       {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => (
                         <button
                           key={num}
                           onClick={() => handleAction('set-rating', { rating: num })}
+                          onMouseEnter={() => setHoveredRating(num)}
                           className="group/heart transition-all duration-200 transform hover:scale-125 active:scale-95 px-0.5"
                         >
                           <Heart 
-                             size={14} 
-                             className="text-white/10 group-hover/heart:text-red-500 group-hover/heart:fill-red-500 transition-all duration-300"
-                             strokeWidth={2}
+                             size={16} 
+                             className={clsx(
+                                "transition-all duration-300",
+                                // Red bordered hearts
+                                num <= (hoveredRating || 0) 
+                                  ? "text-red-500 fill-red-500 stroke-red-600 drop-shadow-[0_0_5px_rgba(239,68,68,0.5)]" 
+                                  : "text-red-500/10 stroke-red-500/40"
+                             )}
+                             strokeWidth={2.5}
                           />
                         </button>
                       ))}
+                    </div>
+                    
+                    {/* Visual Rating Indicator Bar at the bottom */}
+                    <div className="h-1 w-full bg-neutral-800 rounded-full mt-1 overflow-hidden border border-orange-500/20">
+                       <motion.div 
+                          className="h-full bg-gradient-to-r from-orange-600 to-orange-400"
+                          initial={{ width: 0 }}
+                          animate={{ width: hoveredRating ? `${(hoveredRating / 10) * 100}%` : 0 }}
+                       />
                     </div>
                   </div>
                 </motion.div>

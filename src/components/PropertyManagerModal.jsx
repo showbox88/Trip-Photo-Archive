@@ -29,8 +29,9 @@ export function PropertyManagerModal({ isOpen, onClose, metadata, onUpdate, t })
     if (!newValue.trim()) return;
     if (currentList.some(item => item.name === newValue.trim())) return;
     
-    const randomColor = PRESET_COLORS[Math.floor(Math.random() * PRESET_COLORS.length)];
-    const newList = [...currentList, { name: newValue.trim(), color: randomColor }];
+    // Switch from random to sequential to ensure visual variety
+    const sequentialColor = PRESET_COLORS[currentList.length % PRESET_COLORS.length];
+    const newList = [...currentList, { name: newValue.trim(), color: sequentialColor }];
     onUpdate({ [activeTab]: newList });
     setNewValue('');
   };
