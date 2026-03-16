@@ -49,20 +49,17 @@ export function ContextMenu({ menu, onClose, onAction, selectionCount, trips = [
     : "absolute left-full top-0 ml-2";
   const subMenuAnimX = showSubmenuOnLeft ? 10 : -10;
 
-  // New logic for multi-column city layout
-  // Chunk cities into groups of 7 (first chunk includes the 'Add New City' button)
+  // Multi-column city layout logic
   const rowsPerColumn = 7;
   const cityChunks = [];
-  const allCityItems = [...cities];
-  
-  // Create virtual columns
-  // First column: Add New City + first 6 cities
-  const firstCol = [{ type: 'add' }, ...allCityItems.slice(0, 6)];
-  cityChunks.push(firstCol);
-  
-  // Subsequent columns: 7 cities each
-  for (let i = 6; i < allCityItems.length; i += 7) {
-    cityChunks.push(allCityItems.slice(i, i + 7));
+  const sortedCities = [...cities].sort((a, b) => {
+    const nameA = typeof a === 'object' ? a.name : a;
+    const nameB = typeof b === 'object' ? b.name : b;
+    return nameA.localeCompare(nameB);
+  });
+
+  for (let i = 0; i < sortedCities.length; i += rowsPerColumn) {
+    cityChunks.push(sortedCities.slice(i, i + rowsPerColumn));
   }
 
   return (
@@ -166,47 +163,51 @@ export function ContextMenu({ menu, onClose, onAction, selectionCount, trips = [
                   initial={{ opacity: 0, x: subMenuAnimX }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: subMenuAnimX }}
-                  className={`${subMenuPosClass} min-w-max bg-[#1a1b1e]/95 backdrop-blur-3xl border border-white/10 rounded-[2rem] shadow-2xl p-4 flex flex-col gap-2 ring-1 ring-black/50`}
+                  className={`${subMenuPosClass} min-w-max bg-[#1a1b1e]/95 backdrop-blur-3xl border border-white/10 rounded-[2rem] shadow-2xl p-4 flex flex-col gap-4 ring-1 ring-black/50`}
                 >
-                  <p className="px-3 py-1 text-[9px] uppercase tracking-widest text-neutral-600 font-black">
-                    {t('app.context.updateCity')}
-                  </p>
-                  
-                  {/* Multi-column Layout */}
+                  <div className="flex flex-col gap-2">
+                    <p className="px-3 py-1 text-[9px] uppercase tracking-widest text-neutral-600 font-black">
+                      {t('app.context.updateCity')}
+                    </p>
+                    
+                    {/* Top-level Add New City Action */}
+                    <button
+                      onClick={() => handleAction('create-city')}
+                      className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl bg-emerald-500/10 hover:bg-emerald-500/20 transition-all group text-left border border-emerald-500/20 shadow-lg shadow-emerald-500/5 mb-1"
+                    >
+                      <PlusCircle size={18} className="text-emerald-400" />
+                      <span className="text-sm font-bold text-emerald-400">
+                        {t('app.context.addNewCity')}
+                      </span>
+                    </button>
+                  </div>
+
+                  {/* Multi-column City Grid */}
                   <div className="flex gap-4">
-                    {cityChunks.map((chunk, colIdx) => (
-                      <div key={colIdx} className="flex flex-col gap-1 min-w-[150px]">
-                        {chunk.map((item, rowIdx) => {
-                          if (item.type === 'add') {
+                    {cityChunks.length > 0 ? (
+                      cityChunks.map((chunk, colIdx) => (
+                        <div key={colIdx} className="flex flex-col gap-1 min-w-[150px]">
+                          {chunk.map((city, rowIdx) => {
+                            const name = typeof city === 'object' ? city.name : city;
+                            const color = typeof city === 'object' ? city.color : '#10b981';
                             return (
                               <button
-                                key="add-city-btn"
-                                onClick={() => handleAction('create-city')}
-                                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 transition-all group text-left mb-1"
+                                key={`${name}-${colIdx}-${rowIdx}`}
+                                onClick={() => handleAction('set-city', { city: name })}
+                                className="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-emerald-500/20 transition-all group text-left"
                               >
-                                <PlusCircle size={14} className="text-emerald-400" />
-                                <span className="text-xs font-bold text-emerald-400">
-                                  {t('app.context.addNewCity')}...
-                                </span>
+                                <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                                <span className="text-xs font-medium text-neutral-300 group-hover:text-white truncate max-w-[120px]">{name}</span>
                               </button>
                             );
-                          }
-                          
-                          const name = typeof item === 'object' ? item.name : item;
-                          const color = typeof item === 'object' ? item.color : '#10b981';
-                          return (
-                            <button
-                              key={`${name}-${colIdx}-${rowIdx}`}
-                              onClick={() => handleAction('set-city', { city: name })}
-                              className="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-emerald-500/20 transition-all group text-left"
-                            >
-                              <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
-                              <span className="text-xs font-medium text-neutral-300 group-hover:text-white truncate max-w-[120px]">{name}</span>
-                            </button>
-                          );
-                        })}
+                          })}
+                        </div>
+                      ))
+                    ) : (
+                      <div className="px-3 py-8 text-center min-w-[150px]">
+                         <span className="text-xs text-neutral-600 italic">No cities added</span>
                       </div>
-                    ))}
+                    )}
                   </div>
                 </motion.div>
               )}
