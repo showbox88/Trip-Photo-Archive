@@ -27,19 +27,6 @@ import en from './locales/en.json';
 
 const locales = { zh, en };
 
-const PRESET_COLORS = [
-  '#60a5fa', // blue-400
-  '#f87171', // red-400
-  '#34d399', // emerald-400
-  '#fb923c', // orange-400
-  '#a78bfa', // violet-400
-  '#f472b6', // pink-400
-  '#fbbf24', // amber-400
-  '#94a3b8', // slate-400
-  '#38bdf8', // sky-400
-  '#4ade80', // green-400
-];
-
 function NavLink({ label, active, onClick }) {
   return (
     <button
@@ -131,6 +118,11 @@ function App() {
   const [isAvatarMenuOpen, setIsAvatarMenuOpen] = useState(false);
   const [selectedTripId, setSelectedTripId] = useState(null); // 当前选中的行程作用域
   const [language, setLanguage] = useState('zh');
+
+  const PRESET_COLORS = useMemo(() => [
+    '#60a5fa', '#f87171', '#34d399', '#fb923c', '#a78bfa',
+    '#f472b6', '#fbbf24', '#94a3b8', '#38bdf8', '#4ade80'
+  ], []);
   const [filterState, setFilterState] = useState({ unclassified: false, noCity: false, showClassified: false, isWallMode: false });
 
   const t = (path) => {

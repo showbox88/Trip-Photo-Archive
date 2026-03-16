@@ -50,12 +50,12 @@ export function ContextMenu({ menu, onClose, onAction, selectionCount, trips = [
   const subMenuAnimX = showSubmenuOnLeft ? 10 : -10;
 
   // Multi-column city layout logic
-  const rowsPerColumn = 5; // Changed from 7 to 5
+  const rowsPerColumn = 5; // Fixed at 5
   const cityChunks = [];
   const sortedCities = [...cities].sort((a, b) => {
     const nameA = typeof a === 'object' ? a.name : String(a);
     const nameB = typeof b === 'object' ? b.name : String(b);
-    return nameA.localeCompare(nameB);
+    return nameA.localeCompare(nameB, 'zh-CN');
   });
 
   for (let i = 0; i < sortedCities.length; i += rowsPerColumn) {
@@ -177,7 +177,7 @@ export function ContextMenu({ menu, onClose, onAction, selectionCount, trips = [
                     >
                       <PlusCircle size={16} className="text-emerald-400" />
                       <span className="text-xs font-bold text-emerald-400">
-                        {t('app.context.addNewCity')}
+                        {t('app.context.addCity')}
                       </span>
                     </button>
                   </div>
