@@ -1,24 +1,24 @@
 {
   "app": {
     "title": "Trip Photo Archive Board",
-    "subtitle": "A physical-feeling local memory database.",
+    "subtitle": "A dynamic local travel memory database.",
     "zeroUploads": "Zero uploads. Infinite capacity.",
     "selectFolder": "Select Root Folder",
     "restoreArchive": "Restore Archive",
-    "grantingAccess": "Granting Access...",
+    "grantingAccess": "Granting access...",
     "memoryDatabase": "Memory Database",
-    "activePhotos": "Active: {{count}} Photos",
-    "tripCount": "{{count}} Trips",
+    "activePhotos": "Current: {{count}} photos",
+    "tripCount": "{{count}} trips",
     "newTrip": "New Trip",
-    "clearDb": "Clear DB",
+    "clearDb": "Clear Database",
     "storage": "Storage",
     "status": "Status",
-    "upToDate": "Up to Date",
+    "upToDate": "Up to date",
     "total": "Total",
-    "imagesCount": "{{count}} Images",
+    "imagesCount": "{{count}} images",
     "propertyModal": {
       "title": "Property Editor",
-      "subtitle": "Manage your global categories, cities and custom tags",
+      "subtitle": "Manage your global categories, cities, and custom tags",
       "tabCategories": "Categories",
       "tabCities": "Cities",
       "tabTags": "Tags",
@@ -32,7 +32,7 @@
     "nav": {
       "albums": "Albums",
       "events": "Events",
-      "allPhotos": "All Photos",
+      "allPhotos": "Photos",
       "map": "Map",
       "timeline": "Timeline"
     },
@@ -40,39 +40,39 @@
     "account": {
       "title": "Account",
       "offlineMode": "Local Offline Mode",
-      "systemSettings": "Settings",
-      "propertyEdge": "Properties",
+      "systemSettings": "System Settings",
+      "propertyEdge": "Property Editor",
       "language": "Language",
-      "settingsWip": "Settings coming soon (WIP)"
+      "settingsWip": "Settings features coming soon (WIP)"
     },
     "controls": {
-      "showClassified": "Show Classified",
-      "wallMode": "Photo Wall View",
-      "timelineMode": "Timeline View",
-      "resetDb": "Reset DB",
+      "showClassified": "Show Classified Photos",
+      "wallMode": "Wall Mode",
+      "timelineMode": "Timeline Mode",
+      "resetDb": "Reset Database",
       "upload": "Upload",
-      "resetConfirm": "Are you sure you want to clear all categorized trips and events?"
+      "resetConfirm": "Are you sure you want to clear all classified trips and events?"
     },
-    "pageTitle": "Trip Photo Archive Board",
+    "pageTitle": "Itinerary Photo Archiving Layout",
     "map": {
       "route": "Route",
       "event": "Event",
       "photosOnMap": "{{count}} photos on map",
       "noGps": "No GPS data found",
-      "gpsHint": "Add GPS info to event cover photos"
+      "gpsHint": "Please add GPS info to the event cover photo"
     },
     "albums": {
       "title": "My Journeys",
-      "subtitle": "A structured collection of {{photoCount}} archived moments across {{tripCount}} journeys.",
+      "subtitle": "{{photoCount}} archived moments across {{tripCount}} trips.",
       "filter": "Filter",
       "newArchive": "New Archive",
       "createNew": "Create New Collection",
-      "addPhotos": "Add photos and data",
+      "addPhotos": "Add Photos & Data",
       "unknownLocation": "Unknown Location"
     },
     "grid": {
-      "allSelected": "Selected",
-      "partialSelected": "Partial",
+      "allSelected": "All Selected",
+      "partialSelected": "Partial Selected",
       "selectAll": "Select All",
       "photosCount": "{{count}} photos",
       "newPage": "New Page",
@@ -81,15 +81,15 @@
     },
     "filters": {
       "label": "Filters",
-      "title": "Smart Filter",
-      "subtitle": "Select multiple to filter view",
-      "unclassified": "Unclassified",
-      "noCity": "Missing City",
+      "title": "Smart Management",
+      "subtitle": "Multi-select to filter content",
+      "unclassified": "Unclassified Photos",
+      "noCity": "Unmarked City",
       "reset": "Reset All Filters"
     },
     "context": {
-      "manage": "Manage Info",
-      "gatherNew": "Gather into New Event",
+      "manage": "Manage Archive",
+      "gatherNew": "Gather to New Event",
       "editCategory": "Change Category",
       "editCity": "Change City",
       "editRating": "Change Rating",
@@ -116,7 +116,7 @@
     "recent": "Recent",
     "favorites": "Favorites",
     "trips": "Trips",
-    "noTrips": "No trip archives yet. Click \"New Trip\" to start organizing.",
+    "noTrips": "No trips archived yet. Click 'New Trip' to start organizing.",
     "independentEvents": "Independent Events",
     "noEvents": "Organize photos into events to see them here.",
     "archiveCore": "Archive Core"

@@ -50,11 +50,11 @@ export function ContextMenu({ menu, onClose, onAction, selectionCount, trips = [
   const subMenuAnimX = showSubmenuOnLeft ? 10 : -10;
 
   // Multi-column city layout logic
-  const rowsPerColumn = 7;
+  const rowsPerColumn = 5; // Changed from 7 to 5
   const cityChunks = [];
   const sortedCities = [...cities].sort((a, b) => {
-    const nameA = typeof a === 'object' ? a.name : a;
-    const nameB = typeof b === 'object' ? b.name : b;
+    const nameA = typeof a === 'object' ? a.name : String(a);
+    const nameB = typeof b === 'object' ? b.name : String(b);
     return nameA.localeCompare(nameB);
   });
 
@@ -163,7 +163,7 @@ export function ContextMenu({ menu, onClose, onAction, selectionCount, trips = [
                   initial={{ opacity: 0, x: subMenuAnimX }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: subMenuAnimX }}
-                  className={`${subMenuPosClass} min-w-max bg-[#1a1b1e]/95 backdrop-blur-3xl border border-white/10 rounded-[2rem] shadow-2xl p-4 flex flex-col gap-4 ring-1 ring-black/50`}
+                  className={`${subMenuPosClass} min-w-max bg-[#1a1b1e]/95 backdrop-blur-3xl border border-white/10 rounded-[2rem] shadow-2xl p-4 flex flex-col gap-4 ring-1 ring-black/50 translate-z-0`}
                 >
                   <div className="flex flex-col gap-2">
                     <p className="px-3 py-1 text-[9px] uppercase tracking-widest text-neutral-600 font-black">
@@ -173,10 +173,10 @@ export function ContextMenu({ menu, onClose, onAction, selectionCount, trips = [
                     {/* Top-level Add New City Action */}
                     <button
                       onClick={() => handleAction('create-city')}
-                      className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl bg-emerald-500/10 hover:bg-emerald-500/20 transition-all group text-left border border-emerald-500/20 shadow-lg shadow-emerald-500/5 mb-1"
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 transition-all group text-left border border-emerald-500/20 shadow-md shadow-emerald-500/5 mb-0.5"
                     >
-                      <PlusCircle size={18} className="text-emerald-400" />
-                      <span className="text-sm font-bold text-emerald-400">
+                      <PlusCircle size={16} className="text-emerald-400" />
+                      <span className="text-xs font-bold text-emerald-400">
                         {t('app.context.addNewCity')}
                       </span>
                     </button>
@@ -234,7 +234,7 @@ export function ContextMenu({ menu, onClose, onAction, selectionCount, trips = [
                   initial={{ opacity: 0, x: subMenuAnimX }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: subMenuAnimX }}
-                  className={`${subMenuPosClass} min-w-[240px] bg-[#1a1b1e]/98 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl p-2 flex flex-col gap-1 ring-1 ring-black/50`}
+                  className={`${subMenuPosClass} min-w-[240px] bg-[#1a1b1e]/98 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl p-2 flex flex-col gap-1 ring-1 ring-black/50 overflow-hidden`}
                 >
                   <p className="px-3 py-1.5 text-[9px] uppercase tracking-widest text-neutral-600 font-black">
                     {t('app.context.updateRating')}
