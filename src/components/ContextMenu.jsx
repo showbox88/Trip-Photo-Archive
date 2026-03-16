@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { PlusCircle, Info, Trash2, Tag, Move, Layers, ChevronRight, Briefcase, ImagePlus, Heart, MapPin } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import clsx from 'clsx';
 
 export function ContextMenu({ menu, onClose, onAction, selectionCount, trips = [], events = [], categories = [], cities = [], selectedTripId = null, t }) {
@@ -49,18 +49,34 @@ export function ContextMenu({ menu, onClose, onAction, selectionCount, trips = [
     : "absolute left-full top-0 ml-2";
   const subMenuAnimX = showSubmenuOnLeft ? 10 : -10;
 
-  // Multi-column city layout logic
-  const rowsPerColumn = 5; // Fixed at 5
-  const cityChunks = [];
-  const sortedCities = [...cities].sort((a, b) => {
-    const nameA = typeof a === 'object' ? a.name : String(a);
-    const nameB = typeof b === 'object' ? b.name : String(b);
-    return nameA.localeCompare(nameB, 'zh-CN');
-  });
+  // Multi-column Layout Helper
+  const ROWS_PER_COLUMN = 5;
 
-  for (let i = 0; i < sortedCities.length; i += rowsPerColumn) {
-    cityChunks.push(sortedCities.slice(i, i + rowsPerColumn));
-  }
+  const categoryChunks = useMemo(() => {
+    const chunks = [];
+    const sorted = [...categories].sort((a, b) => {
+      const nameA = typeof a === 'object' ? a.name : String(a);
+      const nameB = typeof b === 'object' ? b.name : String(b);
+      return nameA.localeCompare(nameB, 'zh-CN');
+    });
+    for (let i = 0; i < sorted.length; i += ROWS_PER_COLUMN) {
+      chunks.push(sorted.slice(i, i + ROWS_PER_COLUMN));
+    }
+    return chunks;
+  }, [categories]);
+
+  const cityChunks = useMemo(() => {
+    const chunks = [];
+    const sorted = [...cities].sort((a, b) => {
+      const nameA = typeof a === 'object' ? a.name : String(a);
+      const nameB = typeof b === 'object' ? b.name : String(b);
+      return nameA.localeCompare(nameB, 'zh-CN');
+    });
+    for (let i = 0; i < sorted.length; i += ROWS_PER_COLUMN) {
+      chunks.push(sorted.slice(i, i + ROWS_PER_COLUMN));
+    }
+    return chunks;
+  }, [cities]);
 
   return (
     <motion.div
@@ -117,26 +133,50 @@ export function ContextMenu({ menu, onClose, onAction, selectionCount, trips = [
                   initial={{ opacity: 0, x: subMenuAnimX }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: subMenuAnimX }}
-                  className={`${subMenuPosClass} min-w-[160px] bg-[#1a1b1e]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl p-2 flex flex-col gap-1 ring-1 ring-black/50`}
+                  className={`${subMenuPosClass} min-w-max bg-[#1a1b1e]/95 backdrop-blur-3xl border border-white/10 rounded-[2rem] shadow-2xl p-4 flex flex-col gap-4 ring-1 ring-black/50 translate-z-0`}
                 >
-                  <p className="px-3 py-1.5 text-[9px] uppercase tracking-widest text-neutral-600 font-black">
-                    {t('app.context.updateCategory')}
-                  </p>
-                  <div className="max-h-[300px] overflow-y-auto custom-scrollbar">
-                    {categories.map((cat, idx) => {
-                       const name = typeof cat === 'object' ? cat.name : cat;
-                       const color = typeof cat === 'object' ? cat.color : '#60a5fa';
-                       return (
-                         <button
-                           key={`${name}-${idx}`}
-                           onClick={() => handleAction('set-category', { category: name })}
-                           className="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-blue-500/20 transition-all group text-left"
-                         >
-                           <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
-                           <span className="text-xs font-medium text-neutral-300 group-hover:text-white truncate">{name}</span>
-                         </button>
-                       );
-                    })}
+                  <div className="flex flex-col gap-2">
+                    <p className="px-3 py-1 text-[9px] uppercase tracking-widest text-neutral-600 font-black">
+                      {t('app.context.updateCategory')}
+                    </p>
+                    {/* Top-level Add New Category Action */}
+                    <button
+                      onClick={() => handleAction('create-category')}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 transition-all group text-left border border-blue-500/20 shadow-md shadow-blue-500/5 mb-0.5"
+                    >
+                      <PlusCircle size={16} className="text-blue-400" />
+                      <span className="text-xs font-bold text-blue-400">
+                        {t('app.context.addCategory')}
+                      </span>
+                    </button>
+                  </div>
+
+                  {/* Multi-column Category Grid */}
+                  <div className="flex gap-4">
+                    {categoryChunks.length > 0 ? (
+                      categoryChunks.map((chunk, colIdx) => (
+                        <div key={colIdx} className="flex flex-col gap-1 min-w-[150px]">
+                          {chunk.map((cat, rowIdx) => {
+                            const name = typeof cat === 'object' ? cat.name : cat;
+                            const color = typeof cat === 'object' ? cat.color : '#60a5fa';
+                            return (
+                              <button
+                                key={`${name}-${colIdx}-${rowIdx}`}
+                                onClick={() => handleAction('set-category', { category: name })}
+                                className="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-blue-500/20 transition-all group text-left"
+                              >
+                                <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                                <span className="text-xs font-medium text-neutral-300 group-hover:text-white truncate max-w-[120px]">{name}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      ))
+                    ) : (
+                      <div className="px-3 py-8 text-center min-w-[150px]">
+                         <span className="text-xs text-neutral-600 italic">No categories added</span>
+                      </div>
+                    )}
                   </div>
                 </motion.div>
               )}

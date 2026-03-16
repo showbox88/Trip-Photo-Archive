@@ -10,9 +10,8 @@ export default defineConfig({
   server: {
     watch: {
       ignored: [
-        '**/trip_database.json', 
-        '**/test-photos/**',
-        '**/*.json' // Aggressive: ignore all JSON changes to prevent DB-write reloads
+        '**/trip_database.json',
+        '**/test-photos/**'
       ]
     }
   }

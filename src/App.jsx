@@ -357,6 +357,39 @@ function App() {
       await saveToDatabase({ ...dbContent, photos: newPhotos });
       showToast(`已将 ${finalPaths.length} 张照片批量分类为 "${extraData.category}"`, 'blue');
       setSelectedIds(new Set());
+    } else if (actionId === 'create-category') {
+      const catName = window.prompt('请输入新的分类名称:');
+      if (catName && catName.trim()) {
+        const trimmedCat = catName.trim();
+        const selectedPhotoPaths = Array.from(selectedIds)
+          .filter(id => !id.startsWith('event:'));
+        const finalPaths = selectedPhotoPaths.length > 0 ? selectedPhotoPaths : [targetItem.path];
+        const normalizedTargets = new Set(finalPaths.map(p => p.replace(/\\/g, '/').toLowerCase()));
+
+        // 1. Update photos
+        const newPhotos = dbContent.photos.map(p => {
+          const pPath = p.file_name.replace(/\\/g, '/').toLowerCase();
+          if (normalizedTargets.has(pPath)) {
+            return { ...p, category: trimmedCat };
+          }
+          return p;
+        });
+
+        // 2. Add to global categories if missing
+        let newCats = [...(dbContent.categories || [])];
+        if (!newCats.some(c => (typeof c === 'string' ? c : c.name) === trimmedCat)) {
+           const sequentialColor = PRESET_COLORS[newCats.length % PRESET_COLORS.length];
+           newCats.push({ name: trimmedCat, color: sequentialColor });
+        }
+
+        await saveToDatabase({ 
+          ...dbContent, 
+          photos: newPhotos,
+          categories: newCats
+        });
+        showToast(`已创建并分类为 ${trimmedCat}`, 'blue');
+        setSelectedIds(new Set());
+      }
     } else if (actionId === 'set-rating') {
       const selectedPhotoPaths = Array.from(selectedIds)
         .filter(id => !id.startsWith('event:'));
