@@ -7,6 +7,35 @@ export function ContextMenu({ menu, onClose, onAction, selectionCount, trips = [
   const [activeSubmenu, setActiveSubmenu] = useState(null);
   const [hoveredRating, setHoveredRating] = useState(null);
 
+  // Multi-column Layout Helper
+  const ROWS_PER_COLUMN = 5;
+
+  const categoryChunks = useMemo(() => {
+    const chunks = [];
+    const sorted = [...categories].sort((a, b) => {
+      const nameA = typeof a === 'object' ? a.name : String(a);
+      const nameB = typeof b === 'object' ? b.name : String(b);
+      return nameA.localeCompare(nameB, 'zh-CN');
+    });
+    for (let i = 0; i < sorted.length; i += ROWS_PER_COLUMN) {
+      chunks.push(sorted.slice(i, i + ROWS_PER_COLUMN));
+    }
+    return chunks;
+  }, [categories]);
+
+  const cityChunks = useMemo(() => {
+    const chunks = [];
+    const sorted = [...cities].sort((a, b) => {
+      const nameA = typeof a === 'object' ? a.name : String(a);
+      const nameB = typeof b === 'object' ? b.name : String(b);
+      return nameA.localeCompare(nameB, 'zh-CN');
+    });
+    for (let i = 0; i < sorted.length; i += ROWS_PER_COLUMN) {
+      chunks.push(sorted.slice(i, i + ROWS_PER_COLUMN));
+    }
+    return chunks;
+  }, [cities]);
+
   if (!menu) return null;
 
   const isBulk = selectionCount > 1;
@@ -49,34 +78,6 @@ export function ContextMenu({ menu, onClose, onAction, selectionCount, trips = [
     : "absolute left-full top-0 ml-2";
   const subMenuAnimX = showSubmenuOnLeft ? 10 : -10;
 
-  // Multi-column Layout Helper
-  const ROWS_PER_COLUMN = 5;
-
-  const categoryChunks = useMemo(() => {
-    const chunks = [];
-    const sorted = [...categories].sort((a, b) => {
-      const nameA = typeof a === 'object' ? a.name : String(a);
-      const nameB = typeof b === 'object' ? b.name : String(b);
-      return nameA.localeCompare(nameB, 'zh-CN');
-    });
-    for (let i = 0; i < sorted.length; i += ROWS_PER_COLUMN) {
-      chunks.push(sorted.slice(i, i + ROWS_PER_COLUMN));
-    }
-    return chunks;
-  }, [categories]);
-
-  const cityChunks = useMemo(() => {
-    const chunks = [];
-    const sorted = [...cities].sort((a, b) => {
-      const nameA = typeof a === 'object' ? a.name : String(a);
-      const nameB = typeof b === 'object' ? b.name : String(b);
-      return nameA.localeCompare(nameB, 'zh-CN');
-    });
-    for (let i = 0; i < sorted.length; i += ROWS_PER_COLUMN) {
-      chunks.push(sorted.slice(i, i + ROWS_PER_COLUMN));
-    }
-    return chunks;
-  }, [cities]);
 
   return (
     <motion.div
