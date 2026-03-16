@@ -17,6 +17,7 @@ import { Sidebar } from './components/Sidebar';
 import { Lightbox } from './components/Lightbox';
 import { ActionBar } from './components/ActionBar';
 import { AlbumsView } from './components/AlbumsView';
+import { MapView } from './components/MapView';
 import { PropertyManagerModal } from './components/PropertyManagerModal';
 import { MapPin, Tag } from 'lucide-react';
 import { FilterMenu } from './components/FilterMenu';
@@ -736,7 +737,7 @@ function App() {
     }
 
     // 2.6 Show ALL Albums/Trips (Categorized View)
-    if (activeFilter.type === 'all-albums') {
+    if (activeFilter.type === 'all-albums' || activeFilter.type === 'map') {
       return baseTrips.map(trip => ({
         type: 'trip',
         id: trip.trip_id,
@@ -1022,7 +1023,14 @@ function App() {
                       setActiveFilter({ type: 'all' });
                     }} 
                   />
-                  <NavLink label="Map" />
+                  <NavLink
+                    label="Map"
+                    active={activeFilter.type === 'map'}
+                    onClick={() => {
+                      setSelectedTripId(null);
+                      setActiveFilter({ type: 'map' });
+                    }}
+                  />
                 </nav>
               </div>
 
@@ -1087,50 +1095,21 @@ function App() {
 
             {/* Content Area Rendering Logic */}
             {activeFilter.type === 'all-albums' ? (
-              <AlbumsView 
+              <AlbumsView
                 trips={displayedItems}
                 onNavigate={handleNavigate}
                 onContextMenu={onMenuAction}
                 onUpdateTrip={handleUpdateItem}
                 onCreateNew={() => setIsTripModalOpen(true)}
               />
+            ) : activeFilter.type === 'map' ? (
+              <MapView
+                trips={displayedItems}
+                allPhotos={enrichedPhotos}
+                onNavigate={handleNavigate}
+              />
             ) : (
               <div className={`flex-1 flex flex-col min-h-0 ${activeFilter.type === 'all' ? 'bg-[#101922]' : ''}`}>
-                {/* ── Design-Specific Sub Header ── */}
-                <div className="px-10 pt-12 pb-8 flex items-center justify-between shrink-0">
-              <div className="space-y-2">
-                <h2 className="text-4xl font-black tracking-tight text-white">Switzerland Trip 2024</h2>
-                <div className="flex items-center gap-3 text-neutral-500 font-bold text-sm">
-                  <Calendar size={14} />
-                  <span>August 12 - August 24</span>
-                  <span className="w-1.5 h-1.5 rounded-full bg-neutral-700 mx-1" />
-                  <span>142 items</span>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <button 
-                  onClick={handleResetDatabase}
-                  className="flex items-center gap-2 px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-2xl text-xs font-bold text-red-400 hover:bg-red-500/20 transition-all active:scale-95"
-                   title="Clear Database"
-                >
-                  <Trash2 size={16} />
-                  Reset DB
-                </button>
-                
-                <FilterMenu 
-                  filterState={filterState}
-                  onFilterChange={setFilterState}
-                  photos={enrichedPhotos}
-                />
-
-                <button className="flex items-center gap-2 px-6 py-3 bg-blue-600 rounded-2xl text-sm font-bold text-white hover:bg-blue-500 transition-all shadow-xl shadow-blue-600/20 active:scale-95">
-                  <Plus size={18} />
-                  Upload
-                </button>
-              </div>
-            </div>
-
             {/* Main Layout Area */}
             <div className="flex-1 flex overflow-hidden">
               {/* Sidebar: only show in table view */}
@@ -1145,9 +1124,9 @@ function App() {
 
               <div className="flex-1 flex flex-col relative">
                 {/* Virtualized Infinite Grid */}
-                <VirtualGrid 
-                  items={displayedItems} 
-                  onContextMenu={handleItemContextMenu} 
+                <VirtualGrid
+                  items={displayedItems}
+                  onContextMenu={handleItemContextMenu}
                   selectedIds={selectedIds}
                   onToggleSelection={toggleSelection}
                   onToggleDateSelection={handleToggleDateSelection}
@@ -1155,6 +1134,38 @@ function App() {
                   onUpdateItem={handleUpdateItem}
                   animatingTargetId={animatingTargetId}
                   metadata={dbContent}
+                  subHeader={
+                    <div className="px-0 pt-12 pb-8 flex items-center justify-between">
+                      <div className="space-y-2">
+                        <h2 className="text-4xl font-black tracking-tight text-white">Switzerland Trip 2024</h2>
+                        <div className="flex items-center gap-3 text-neutral-500 font-bold text-sm">
+                          <Calendar size={14} />
+                          <span>August 12 - August 24</span>
+                          <span className="w-1.5 h-1.5 rounded-full bg-neutral-700 mx-1" />
+                          <span>142 items</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={handleResetDatabase}
+                          className="flex items-center gap-2 px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-2xl text-xs font-bold text-red-400 hover:bg-red-500/20 transition-all active:scale-95"
+                          title="Clear Database"
+                        >
+                          <Trash2 size={16} />
+                          Reset DB
+                        </button>
+                        <FilterMenu
+                          filterState={filterState}
+                          onFilterChange={setFilterState}
+                          photos={enrichedPhotos}
+                        />
+                        <button className="flex items-center gap-2 px-6 py-3 bg-blue-600 rounded-2xl text-sm font-bold text-white hover:bg-blue-500 transition-all shadow-xl shadow-blue-600/20 active:scale-95">
+                          <Plus size={18} />
+                          Upload
+                        </button>
+                      </div>
+                    </div>
+                  }
                 />
 
                 <ActionBar 

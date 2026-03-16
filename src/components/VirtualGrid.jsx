@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Plus as PlusIcon, CheckCircle2, Circle } from 'lucide-react';
 import clsx from 'clsx';
 
-export function VirtualGrid({ items, onContextMenu, selectedIds, onToggleSelection, onToggleDateSelection, onNavigate, onUpdateItem, onUpdateTrip, animatingTargetId, metadata }) {
+export function VirtualGrid({ items, onContextMenu, selectedIds, onToggleSelection, onToggleDateSelection, onNavigate, onUpdateItem, onUpdateTrip, animatingTargetId, metadata, subHeader }) {
   const parentRef = useRef(null);
   const gridRef = useRef(null);
   
@@ -148,9 +148,10 @@ export function VirtualGrid({ items, onContextMenu, selectedIds, onToggleSelecti
           onToggleSelection(new Set(), true);
         }
       }}
-      className="flex-1 overflow-y-auto w-full px-10 py-10 scroll-smooth custom-scrollbar select-none"
+      className="flex-1 overflow-y-auto w-full px-10 pb-10 scroll-smooth custom-scrollbar select-none"
     >
-      <div 
+      {subHeader}
+      <div
         ref={gridRef}
         className="w-full grid gap-4"
         style={{ 
