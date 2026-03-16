@@ -155,17 +155,17 @@ export function ContextMenu({ menu, onClose, onAction, selectionCount, trips = [
                   <p className="px-3 py-1.5 text-[9px] uppercase tracking-widest text-neutral-600 font-black">
                     {t('app.context.updateCity')}
                   </p>
-                  <div className="max-h-[300px] overflow-y-auto custom-scrollbar">
+                  <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
                     <button
                       onClick={() => handleAction('create-city')}
                       className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 transition-all group text-left mb-1"
                     >
                       <PlusCircle size={14} className="text-emerald-400" />
                       <span className="text-xs font-bold text-emerald-400">
-                        {t('app.grid.newPage')}...
+                        {t('app.context.addNewCity')}...
                       </span>
                     </button>
-                    {cities.map((city, idx) => {
+                    {cities.slice(0, cities.length > 7 ? 6 : cities.length).map((city, idx) => {
                       const name = typeof city === 'object' ? city.name : city;
                       const color = typeof city === 'object' ? city.color : '#10b981';
                       return (
@@ -179,6 +179,47 @@ export function ContextMenu({ menu, onClose, onAction, selectionCount, trips = [
                         </button>
                       );
                     })}
+
+                    {cities.length > 7 && (
+                      <div className="relative overflow-visible">
+                        <button
+                          onMouseEnter={() => setActiveSubmenu('city-more')}
+                          className="w-full flex items-center justify-between gap-3 px-3 py-2 rounded-xl hover:bg-emerald-500/20 transition-all group text-left"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-2 h-2 rounded-full shrink-0 bg-neutral-600 group-hover:bg-emerald-400" />
+                            <span className="text-xs font-medium text-neutral-300 group-hover:text-white">{t('app.context.more')}</span>
+                          </div>
+                          <ChevronRight size={14} className="text-neutral-600 group-hover:text-emerald-400" />
+                        </button>
+
+                        <AnimatePresence>
+                          {activeSubmenu === 'city-more' && (
+                            <motion.div
+                              initial={{ opacity: 0, x: subMenuAnimX }}
+                              animate={{ opacity: 1, x: 0 }}
+                              exit={{ opacity: 0, x: subMenuAnimX }}
+                              className={`${subMenuPosClass} min-w-[160px] bg-[#1a1b1e]/98 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl p-2 flex flex-col gap-1 ring-1 ring-black/50`}
+                            >
+                              {cities.slice(6).map((city, idx) => {
+                                const name = typeof city === 'object' ? city.name : city;
+                                const color = typeof city === 'object' ? city.color : '#10b981';
+                                return (
+                                  <button
+                                    key={`${name}-${idx}-more`}
+                                    onClick={() => handleAction('set-city', { city: name })}
+                                    className="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-emerald-500/20 transition-all group text-left"
+                                  >
+                                    <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                                    <span className="text-xs font-medium text-neutral-300 group-hover:text-white truncate">{name}</span>
+                                  </button>
+                                );
+                              })}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    )}
                   </div>
                 </motion.div>
               )}

@@ -106,7 +106,9 @@
       "selectTargetEvent": "Select Target Event",
       "selectTargetTrip": "Select Target Trip",
       "archiveToNewTrip": "Archive into New Trip",
-      "archiveToExistingTrip": "Archive into Existing Trip"
+      "archiveToExistingTrip": "Archive into Existing Trip",
+      "addNewCity": "Add New City",
+      "more": "More"
     }
   },
   "sidebar": {
