@@ -27,6 +27,19 @@ import en from './locales/en.json';
 
 const locales = { zh, en };
 
+const PRESET_COLORS = [
+  '#60a5fa', // blue-400
+  '#f87171', // red-400
+  '#34d399', // emerald-400
+  '#fb923c', // orange-400
+  '#a78bfa', // violet-400
+  '#f472b6', // pink-400
+  '#fbbf24', // amber-400
+  '#94a3b8', // slate-400
+  '#38bdf8', // sky-400
+  '#4ade80', // green-400
+];
+
 function NavLink({ label, active, onClick }) {
   return (
     <button
@@ -414,7 +427,8 @@ function App() {
         // 2. Add to global cities if missing
         let newCities = [...(dbContent.cities || [])];
         if (!newCities.some(c => c.name === trimmedCity)) {
-           newCities.push({ name: trimmedCity, color: '#60a5fa' });
+           const sequentialColor = PRESET_COLORS[newCities.length % PRESET_COLORS.length];
+           newCities.push({ name: trimmedCity, color: sequentialColor });
         }
         newCities.sort((a, b) => a.name.localeCompare(b.name));
 
