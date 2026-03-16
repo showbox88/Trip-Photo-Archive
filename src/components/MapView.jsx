@@ -270,7 +270,7 @@ function HoverBubble({ eventData }) {
         {/* Text */}
         <div style={{ padding: '8px 10px 10px', fontFamily: 'system-ui,sans-serif' }}>
           <div style={{ color: 'white', fontWeight: 700, fontSize: 12, lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {event.title || 'Unnamed Event'}
+            {event.title || t('app.map.event')}
           </div>
           {event.city && (
             <div style={{ color: '#3b9eff', fontSize: 11, marginTop: 3 }}>📍 {event.city}</div>
@@ -399,7 +399,7 @@ function ExpandedPhotoOverlay({ photo, onClose }) {
 
 // ─── Main MapView ──────────────────────────────────────────────────────────────
 
-export function MapView({ trips, allPhotos, onNavigate }) {
+export function MapView({ trips, allPhotos, onNavigate, t }) {
   const [selectedTripId, setSelectedTripId] = useState(() => trips[0]?.id || null);
   const [hoveredEventId, setHoveredEventId] = useState(null);
   const [selectedEventId, setSelectedEventId] = useState(null);
@@ -455,9 +455,9 @@ export function MapView({ trips, allPhotos, onNavigate }) {
         <div className="px-4 pt-5 pb-3 shrink-0 border-b border-white/5">
           <h2 className="text-base font-black text-white tracking-tight flex items-center gap-2">
             <Navigation2 size={16} className="text-[#0d7ff2]" />
-            Trip Map
+            {t('app.nav.map')}
           </h2>
-          <p className="text-[11px] text-slate-500 mt-0.5">{trips.length} journeys · click to view route</p>
+          <p className="text-[11px] text-slate-500 mt-0.5">{trips.length} {t('sidebar.trips')} · click to view route</p>
         </div>
         <div className="flex-1 overflow-y-auto custom-scrollbar px-3 py-3 flex flex-col gap-2.5">
           {trips.map(tripData => (
@@ -563,21 +563,21 @@ export function MapView({ trips, allPhotos, onNavigate }) {
               className="flex items-center gap-1.5 text-[#3b9eff] hover:text-white transition-colors text-xs font-bold"
             >
               <ArrowLeft size={13} />
-              Route
+              {t('app.map.route')}
             </button>
             <div className="w-px h-4 bg-white/10" />
             <div className="flex items-center gap-2">
               <div className="w-5 h-5 bg-[#0d7ff2] rounded-full flex items-center justify-center text-white font-black text-[10px]">
                 {selectedEventData.index}
               </div>
-              <span className="text-white font-bold text-sm">{selectedEventData.event.title || 'Event'}</span>
+              <span className="text-white font-bold text-sm">{selectedEventData.event.title || t('app.map.event')}</span>
               {selectedEventData.event.city && (
                 <span className="text-slate-400 text-xs">· {selectedEventData.event.city}</span>
               )}
             </div>
             <div className="w-px h-4 bg-white/10" />
             <span className="text-slate-400 text-xs flex items-center gap-1">
-              <Camera size={11} />{eventPhotos.length} photos on map
+              <Camera size={11} />{t('app.map.photosOnMap').replace('{{count}}', eventPhotos.length)}
             </span>
           </div>
         )}
@@ -587,8 +587,8 @@ export function MapView({ trips, allPhotos, onNavigate }) {
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[500]">
             <div className="bg-black/70 backdrop-blur-md rounded-2xl px-6 py-5 text-center">
               <MapPin size={28} className="text-slate-600 mx-auto mb-2" />
-              <p className="text-white font-bold text-sm">No GPS data found</p>
-              <p className="text-slate-400 text-xs mt-1">Add GPS info to event cover photos</p>
+              <p className="text-white font-bold text-sm">{t('app.map.noGps')}</p>
+              <p className="text-slate-400 text-xs mt-1">{t('app.map.gpsHint')}</p>
             </div>
           </div>
         )}

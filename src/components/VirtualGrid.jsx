@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Plus as PlusIcon, CheckCircle2, Circle } from 'lucide-react';
 import clsx from 'clsx';
 
-export function VirtualGrid({ items, onContextMenu, selectedIds, onToggleSelection, onToggleDateSelection, onNavigate, onUpdateItem, onUpdateTrip, animatingTargetId, metadata, subHeader }) {
+export function VirtualGrid({ items, onContextMenu, selectedIds, onToggleSelection, onToggleDateSelection, onNavigate, onUpdateItem, onUpdateTrip, animatingTargetId, metadata, subHeader, t }) {
   const parentRef = useRef(null);
   const gridRef = useRef(null);
   
@@ -196,12 +196,12 @@ export function VirtualGrid({ items, onContextMenu, selectedIds, onToggleSelecti
                         <Circle size={16} />
                       )}
                       <span className="text-[10px] font-bold uppercase tracking-wider">
-                        {isAllSelected ? '已全选' : (isPartialSelected ? '部分选中' : '全选')}
+                        {isAllSelected ? t('app.grid.allSelected') : (isPartialSelected ? t('app.grid.partialSelected') : t('app.grid.selectAll'))}
                       </span>
                     </button>
 
                     <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">
-                      {photosOnDate.length} 张照片
+                      {t('app.grid.photosCount').replace('{{count}}', photosOnDate.length)}
                     </span>
                   </div>
                   
@@ -250,7 +250,7 @@ export function VirtualGrid({ items, onContextMenu, selectedIds, onToggleSelecti
             className="border border-dashed border-white/8 rounded-xl flex flex-col items-center justify-center gap-1.5 text-white/20 hover:text-white/40 hover:border-white/15 transition-all cursor-pointer min-h-[180px]"
           >
             <PlusIcon size={20} />
-            <span className="text-[11px] font-medium">New page</span>
+            <span className="text-[11px] font-medium">{t('app.grid.newPage')}</span>
           </motion.div>
       </div>
 

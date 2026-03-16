@@ -1,0 +1,122 @@
+{
+  "app": {
+    "title": "Trip Photo Archive Board",
+    "subtitle": "A physical-feeling local memory database.",
+    "zeroUploads": "Zero uploads. Infinite capacity.",
+    "selectFolder": "Select Root Folder",
+    "restoreArchive": "Restore Archive",
+    "grantingAccess": "Granting Access...",
+    "memoryDatabase": "Memory Database",
+    "activePhotos": "Active: {{count}} Photos",
+    "tripCount": "{{count}} Trips",
+    "newTrip": "New Trip",
+    "clearDb": "Clear DB",
+    "storage": "Storage",
+    "status": "Status",
+    "upToDate": "Up to Date",
+    "total": "Total",
+    "imagesCount": "{{count}} Images",
+    "propertyModal": {
+      "title": "Property Editor",
+      "subtitle": "Manage your global categories, cities and custom tags",
+      "tabCategories": "Categories",
+      "tabCities": "Cities",
+      "tabTags": "Tags",
+      "addPlaceholder": "Enter new {{tab}}...",
+      "addButton": "Add",
+      "emptyState": "No {{tab}} added yet",
+      "done": "Done",
+      "clickToChangeColor": "Click to change color",
+      "delete": "Delete"
+    },
+    "nav": {
+      "albums": "Albums",
+      "events": "Events",
+      "allPhotos": "All Photos",
+      "map": "Map",
+      "timeline": "Timeline"
+    },
+    "searchPlaceholder": "Search your memories...",
+    "account": {
+      "title": "Account",
+      "offlineMode": "Local Offline Mode",
+      "systemSettings": "Settings",
+      "propertyEdge": "Properties",
+      "language": "Language",
+      "settingsWip": "Settings coming soon (WIP)"
+    },
+    "controls": {
+      "showClassified": "Show Classified",
+      "wallMode": "Photo Wall View",
+      "timelineMode": "Timeline View",
+      "resetDb": "Reset DB",
+      "upload": "Upload",
+      "resetConfirm": "Are you sure you want to clear all categorized trips and events?"
+    },
+    "pageTitle": "Trip Photo Archive Board",
+    "map": {
+      "route": "Route",
+      "event": "Event",
+      "photosOnMap": "{{count}} photos on map",
+      "noGps": "No GPS data found",
+      "gpsHint": "Add GPS info to event cover photos"
+    },
+    "albums": {
+      "title": "My Journeys",
+      "subtitle": "A structured collection of {{photoCount}} archived moments across {{tripCount}} journeys.",
+      "filter": "Filter",
+      "newArchive": "New Archive",
+      "createNew": "Create New Collection",
+      "addPhotos": "Add photos and data",
+      "unknownLocation": "Unknown Location"
+    },
+    "grid": {
+      "allSelected": "Selected",
+      "partialSelected": "Partial",
+      "selectAll": "Select All",
+      "photosCount": "{{count}} photos",
+      "newPage": "New Page",
+      "unnamedTrip": "Unnamed Trip",
+      "unnamedEvent": "Unnamed Event"
+    },
+    "filters": {
+      "label": "Filters",
+      "title": "Smart Filter",
+      "subtitle": "Select multiple to filter view",
+      "unclassified": "Unclassified",
+      "noCity": "Missing City",
+      "reset": "Reset All Filters"
+    },
+    "context": {
+      "manage": "Manage Info",
+      "gatherNew": "Gather into New Event",
+      "editCategory": "Change Category",
+      "editCity": "Change City",
+      "editRating": "Change Rating",
+      "addToEvent": "Add to Existing Event",
+      "setTripCover": "Set as Trip Cover",
+      "setEventCover": "Set as Event Cover",
+      "viewDetail": "View Details",
+      "remove": "Remove",
+      "batchManage": "Batch Manage",
+      "itemsSelected": "{{count}} items selected",
+      "updateCategory": "Update Category",
+      "updateCity": "Update City",
+      "updateRating": "Update Rating",
+      "selectTargetEvent": "Select Target Event",
+      "selectTargetTrip": "Select Target Trip",
+      "archiveToNewTrip": "Archive into New Trip",
+      "archiveToExistingTrip": "Archive into Existing Trip"
+    }
+  },
+  "sidebar": {
+    "allMemories": "All Memories",
+    "recent": "Recent",
+    "favorites": "Favorites",
+    "trips": "Trips",
+    "noTrips": "No trip archives yet. Click \"New Trip\" to start organizing.",
+    "independentEvents": "Independent Events",
+    "noEvents": "Organize photos into events to see them here.",
+    "archiveCore": "Archive Core"
+  }
+}

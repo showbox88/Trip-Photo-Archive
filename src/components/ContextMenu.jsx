@@ -2,7 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { PlusCircle, Info, Trash2, Tag, Move, Layers, ChevronRight, Briefcase, ImagePlus, Heart, MapPin } from 'lucide-react';
 import { useState } from 'react';
 
-export function ContextMenu({ menu, onClose, onAction, selectionCount, trips = [], events = [], categories = [], cities = [], selectedTripId = null }) {
+export function ContextMenu({ menu, onClose, onAction, selectionCount, trips = [], events = [], categories = [], cities = [], selectedTripId = null, t }) {
   const [activeSubmenu, setActiveSubmenu] = useState(null);
 
   if (!menu) return null;
@@ -58,9 +58,11 @@ export function ContextMenu({ menu, onClose, onAction, selectionCount, trips = [
       onMouseLeave={() => setActiveSubmenu(null)}
     >
       <div className="px-3 py-2 border-b border-white/5 mb-1">
-        <p className="text-[10px] uppercase tracking-widest text-neutral-500 font-bold">{isBulk ? '批量管理' : '管理档案'}</p>
+        <p className="text-[10px] uppercase tracking-widest text-neutral-500 font-bold">
+          {isBulk ? t('app.context.batchManage') : t('app.context.manage')}
+        </p>
         <p className="text-xs text-neutral-300 truncate font-medium">
-          {isBulk ? `${selectionCount} 个已选项目` : menu.data?.name || menu.data?.title}
+          {isBulk ? t('app.context.itemsSelected').replace('{{count}}', selectionCount) : menu.data?.name || menu.data?.title}
         </p>
       </div>
       
@@ -72,7 +74,9 @@ export function ContextMenu({ menu, onClose, onAction, selectionCount, trips = [
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 transition-all group text-orange-400"
           >
             <PlusCircle size={18} className="group-hover:scale-110 transition-transform" />
-            <span className="text-sm font-medium text-neutral-200 group-hover:text-white">聚集到新事件</span>
+            <span className="text-sm font-medium text-neutral-200 group-hover:text-white">
+              {t('app.context.gatherNew')}
+            </span>
           </button>
 
           <div className="relative">
@@ -82,7 +86,9 @@ export function ContextMenu({ menu, onClose, onAction, selectionCount, trips = [
             >
               <div className="flex items-center gap-3">
                 <Tag size={18} className="group-hover:scale-110 transition-transform" />
-                <span className="text-sm font-medium text-neutral-200 group-hover:text-white">修改分类</span>
+                <span className="text-sm font-medium text-neutral-200 group-hover:text-white">
+                  {t('app.context.editCategory')}
+                </span>
               </div>
               <ChevronRight size={14} className="text-neutral-600 group-hover:text-white transition-colors" />
             </button>
@@ -95,21 +101,23 @@ export function ContextMenu({ menu, onClose, onAction, selectionCount, trips = [
                   exit={{ opacity: 0, x: subMenuAnimX }}
                   className={`${subMenuPosClass} min-w-[160px] bg-[#1a1b1e]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl p-2 flex flex-col gap-1 ring-1 ring-black/50`}
                 >
-                  <p className="px-3 py-1.5 text-[9px] uppercase tracking-widest text-neutral-600 font-black">更新分类为</p>
+                  <p className="px-3 py-1.5 text-[9px] uppercase tracking-widest text-neutral-600 font-black">
+                    {t('app.context.updateCategory')}
+                  </p>
                   <div className="max-h-[300px] overflow-y-auto custom-scrollbar">
                     {categories.map((cat, idx) => {
-                      const name = typeof cat === 'object' ? cat.name : cat;
-                      const color = typeof cat === 'object' ? cat.color : '#60a5fa';
-                      return (
-                        <button
-                          key={`${name}-${idx}`}
-                          onClick={() => handleAction('set-category', { category: name })}
-                          className="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-blue-500/20 transition-all group text-left"
-                        >
-                          <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
-                          <span className="text-xs font-medium text-neutral-300 group-hover:text-white truncate">{name}</span>
-                        </button>
-                      );
+                       const name = typeof cat === 'object' ? cat.name : cat;
+                       const color = typeof cat === 'object' ? cat.color : '#60a5fa';
+                       return (
+                         <button
+                           key={`${name}-${idx}`}
+                           onClick={() => handleAction('set-category', { category: name })}
+                           className="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-blue-500/20 transition-all group text-left"
+                         >
+                           <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                           <span className="text-xs font-medium text-neutral-300 group-hover:text-white truncate">{name}</span>
+                         </button>
+                       );
                     })}
                   </div>
                 </motion.div>
@@ -124,7 +132,9 @@ export function ContextMenu({ menu, onClose, onAction, selectionCount, trips = [
             >
               <div className="flex items-center gap-3">
                 <MapPin size={18} className="group-hover:scale-110 transition-transform" />
-                <span className="text-sm font-medium text-neutral-200 group-hover:text-white">修改城市</span>
+                <span className="text-sm font-medium text-neutral-200 group-hover:text-white">
+                  {t('app.context.editCity')}
+                </span>
               </div>
               <ChevronRight size={14} className="text-neutral-600 group-hover:text-white transition-colors" />
             </button>
@@ -137,14 +147,18 @@ export function ContextMenu({ menu, onClose, onAction, selectionCount, trips = [
                   exit={{ opacity: 0, x: subMenuAnimX }}
                   className={`${subMenuPosClass} min-w-[160px] bg-[#1a1b1e]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl p-2 flex flex-col gap-1 ring-1 ring-black/50`}
                 >
-                  <p className="px-3 py-1.5 text-[9px] uppercase tracking-widest text-neutral-600 font-black">更新城市为</p>
+                  <p className="px-3 py-1.5 text-[9px] uppercase tracking-widest text-neutral-600 font-black">
+                    {t('app.context.updateCity')}
+                  </p>
                   <div className="max-h-[300px] overflow-y-auto custom-scrollbar">
                     <button
                       onClick={() => handleAction('create-city')}
                       className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 transition-all group text-left mb-1"
                     >
                       <PlusCircle size={14} className="text-emerald-400" />
-                      <span className="text-xs font-bold text-emerald-400">新建城市...</span>
+                      <span className="text-xs font-bold text-emerald-400">
+                        {t('app.grid.newPage')}...
+                      </span>
                     </button>
                     {cities.map((city, idx) => {
                       const name = typeof city === 'object' ? city.name : city;
@@ -160,9 +174,6 @@ export function ContextMenu({ menu, onClose, onAction, selectionCount, trips = [
                         </button>
                       );
                     })}
-                    {cities.length === 0 && (
-                      <p className="px-3 py-4 text-[10px] text-neutral-600 italic text-center">暂无保存城市</p>
-                    )}
                   </div>
                 </motion.div>
               )}
@@ -176,7 +187,9 @@ export function ContextMenu({ menu, onClose, onAction, selectionCount, trips = [
             >
               <div className="flex items-center gap-3">
                 <Heart size={18} className="group-hover:scale-110 transition-transform" />
-                <span className="text-sm font-medium text-neutral-200 group-hover:text-white">修改好感度</span>
+                <span className="text-sm font-medium text-neutral-200 group-hover:text-white">
+                  {t('app.context.editRating')}
+                </span>
               </div>
               <ChevronRight size={14} className="text-neutral-600 group-hover:text-white transition-colors" />
             </button>
@@ -189,7 +202,9 @@ export function ContextMenu({ menu, onClose, onAction, selectionCount, trips = [
                   exit={{ opacity: 0, x: subMenuAnimX }}
                   className={`${subMenuPosClass} min-w-[210px] bg-[#1a1b1e]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl p-2 flex flex-col gap-1 ring-1 ring-black/50`}
                 >
-                  <p className="px-3 py-1.5 text-[9px] uppercase tracking-widest text-neutral-600 font-black">更新评分</p>
+                  <p className="px-3 py-1.5 text-[9px] uppercase tracking-widest text-neutral-600 font-black">
+                    {t('app.context.updateRating')}
+                  </p>
                   <div className="flex flex-col gap-2 p-2 bg-white/5 rounded-xl border border-white/5 mx-1">
                     <div className="flex items-center gap-1 justify-between px-1">
                       {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => (
@@ -199,9 +214,9 @@ export function ContextMenu({ menu, onClose, onAction, selectionCount, trips = [
                           className="group/heart transition-all duration-200 transform hover:scale-125 active:scale-95 px-0.5"
                         >
                           <Heart 
-                            size={14} 
-                            className="text-white/10 group-hover/heart:text-red-500 group-hover/heart:fill-red-500 transition-all duration-300"
-                            strokeWidth={2}
+                             size={14} 
+                             className="text-white/10 group-hover/heart:text-red-500 group-hover/heart:fill-red-500 transition-all duration-300"
+                             strokeWidth={2}
                           />
                         </button>
                       ))}
@@ -219,7 +234,9 @@ export function ContextMenu({ menu, onClose, onAction, selectionCount, trips = [
             >
               <div className="flex items-center gap-3">
                 <PlusCircle size={18} className="group-hover:scale-110 transition-transform" />
-                <span className="text-sm font-medium text-neutral-200 group-hover:text-white">添加到已有事件</span>
+                <span className="text-sm font-medium text-neutral-200 group-hover:text-white">
+                  {t('app.context.addToEvent')}
+                </span>
               </div>
               <ChevronRight size={14} className="text-neutral-600 group-hover:text-white transition-colors" />
             </button>
@@ -232,9 +249,13 @@ export function ContextMenu({ menu, onClose, onAction, selectionCount, trips = [
                   exit={{ opacity: 0, x: subMenuAnimX }}
                   className={`${subMenuPosClass} min-w-[200px] bg-[#1a1b1e]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl p-2 flex flex-col gap-1 ring-1 ring-black/50`}
                 >
-                  <p className="px-3 py-1.5 text-[9px] uppercase tracking-widest text-neutral-600 font-black">选择目标事件</p>
+                  <p className="px-3 py-1.5 text-[9px] uppercase tracking-widest text-neutral-600 font-black">
+                    {t('app.context.selectTargetEvent')}
+                  </p>
                   {events.length === 0 ? (
-                    <p className="px-3 py-4 text-xs text-neutral-500 italic">暂无已有事件</p>
+                    <p className="px-3 py-4 text-xs text-neutral-500 italic">
+                      {t('sidebar.noEvents')}
+                    </p>
                   ) : (
                     <div className="max-h-[300px] overflow-y-auto custom-scrollbar">
                       {events.map(event => (
@@ -264,7 +285,9 @@ export function ContextMenu({ menu, onClose, onAction, selectionCount, trips = [
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 transition-all group text-purple-400"
           >
             <PlusCircle size={18} className="group-hover:scale-110 transition-transform" />
-            <span className="text-sm font-medium text-neutral-200 group-hover:text-white">归档到新行程</span>
+            <span className="text-sm font-medium text-neutral-200 group-hover:text-white">
+              {t('app.context.archiveToNewTrip')}
+            </span>
           </button>
 
           <div className="relative">
@@ -274,7 +297,9 @@ export function ContextMenu({ menu, onClose, onAction, selectionCount, trips = [
             >
               <div className="flex items-center gap-3">
                 <Layers size={18} className="group-hover:scale-110 transition-transform" />
-                <span className="text-sm font-medium text-neutral-200 group-hover:text-white">归档到已有行程</span>
+                <span className="text-sm font-medium text-neutral-200 group-hover:text-white">
+                  {t('app.context.archiveToExistingTrip')}
+                </span>
               </div>
               <ChevronRight size={14} className="text-neutral-600 group-hover:text-white transition-colors" />
             </button>
@@ -287,9 +312,13 @@ export function ContextMenu({ menu, onClose, onAction, selectionCount, trips = [
                   exit={{ opacity: 0, x: subMenuAnimX }}
                   className={`${subMenuPosClass} min-w-[200px] bg-[#1a1b1e]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl p-2 flex flex-col gap-1 ring-1 ring-black/50`}
                 >
-                  <p className="px-3 py-1.5 text-[9px] uppercase tracking-widest text-neutral-600 font-black">选择目标行程</p>
+                  <p className="px-3 py-1.5 text-[9px] uppercase tracking-widest text-neutral-600 font-black">
+                    {t('app.context.selectTargetTrip')}
+                  </p>
                   {trips.length === 0 ? (
-                    <p className="px-3 py-4 text-xs text-neutral-500 italic">暂无已有行程</p>
+                    <p className="px-3 py-4 text-xs text-neutral-500 italic">
+                      {t('sidebar.noTrips')}
+                    </p>
                   ) : (
                     <div className="max-h-[300px] overflow-y-auto custom-scrollbar">
                       {trips.map(trip => (
@@ -319,7 +348,9 @@ export function ContextMenu({ menu, onClose, onAction, selectionCount, trips = [
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 transition-all group text-purple-400"
         >
           <ImagePlus size={18} className="group-hover:scale-110 transition-transform" />
-          <span className="text-sm font-medium text-purple-400/80 group-hover:text-purple-400">设为所在行程封面</span>
+          <span className="text-sm font-medium text-purple-400/80 group-hover:text-purple-400">
+            {t('app.context.setTripCover')}
+          </span>
         </button>
       )}
 
@@ -329,7 +360,9 @@ export function ContextMenu({ menu, onClose, onAction, selectionCount, trips = [
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 transition-all group text-orange-400"
         >
           <ImagePlus size={18} className="group-hover:scale-110 transition-transform" />
-          <span className="text-sm font-medium text-orange-400/80 group-hover:text-orange-400">设为事件封面</span>
+          <span className="text-sm font-medium text-orange-400/80 group-hover:text-orange-400">
+            {t('app.context.setEventCover')}
+          </span>
         </button>
       )}
 
@@ -338,7 +371,9 @@ export function ContextMenu({ menu, onClose, onAction, selectionCount, trips = [
         className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 transition-all group text-neutral-400"
       >
         <Info size={18} className="group-hover:scale-110 transition-transform" />
-        <span className="text-sm font-medium text-neutral-200 group-hover:text-white">查看详情</span>
+        <span className="text-sm font-medium text-neutral-200 group-hover:text-white">
+          {t('app.context.viewDetail')}
+        </span>
       </button>
       
       <button
@@ -346,7 +381,9 @@ export function ContextMenu({ menu, onClose, onAction, selectionCount, trips = [
         className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-red-500/10 transition-all group text-red-400"
       >
         <Trash2 size={18} className="group-hover:scale-110 transition-transform" />
-        <span className="text-sm font-medium text-red-400/80 group-hover:text-red-400">移除</span>
+        <span className="text-sm font-medium text-red-400/80 group-hover:text-red-400">
+          {t('app.context.remove')}
+        </span>
       </button>
     </motion.div>
   );

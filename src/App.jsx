@@ -3,7 +3,7 @@ import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 import { 
   FolderOpen, Settings, ListFilter, Play, LayoutGrid, AlignJustify, 
   SlidersHorizontal, ArrowUpDown, Search, Plane, Plus, Trash2, 
-  ChevronRight, CheckCircle2, ChevronDown, Archive, Calendar 
+  ChevronRight, CheckCircle2, ChevronDown, Archive, Calendar, Clock
 } from 'lucide-react';
 import { useFileSystemAccess } from './hooks/useFileSystemAccess';
 import { useContextMenu } from './hooks/useContextMenu';
@@ -22,6 +22,10 @@ import { PropertyManagerModal } from './components/PropertyManagerModal';
 import { MapPin, Tag } from 'lucide-react';
 import { FilterMenu } from './components/FilterMenu';
 import clsx from 'clsx';
+import zh from './locales/zh.json';
+import en from './locales/en.json';
+
+const locales = { zh, en };
 
 function NavLink({ label, active, onClick }) {
   return (
@@ -37,8 +41,8 @@ function NavLink({ label, active, onClick }) {
   );
 }
 
-const formatDateHeader = (dateStr) => {
-  if (!dateStr || dateStr === 'unknown') return '未知日期';
+const formatDateHeader = (dateStr, language = 'zh') => {
+  if (!dateStr || dateStr === 'unknown') return language === 'zh' ? '未知日期' : 'Unknown Date';
   try {
     const date = new Date(dateStr);
     const now = new Date();
@@ -51,8 +55,9 @@ const formatDateHeader = (dateStr) => {
       weekday: 'long'
     };
     
-    let formatted = new Intl.DateTimeFormat('zh-CN', options).format(date);
-    if (isToday) formatted = `今天, ${formatted}`;
+    const locale = language === 'zh' ? 'zh-CN' : 'en-US';
+    let formatted = new Intl.DateTimeFormat(locale, options).format(date);
+    if (isToday) formatted = language === 'zh' ? `今天, ${formatted}` : `Today, ${formatted}`;
     return formatted;
   } catch (e) {
     return dateStr;
@@ -112,7 +117,21 @@ function App() {
   const [isPropertyModalOpen, setIsPropertyModalOpen] = useState(false);
   const [isAvatarMenuOpen, setIsAvatarMenuOpen] = useState(false);
   const [selectedTripId, setSelectedTripId] = useState(null); // 当前选中的行程作用域
-  const [filterState, setFilterState] = useState({ unclassified: false, noCity: false });
+  const [language, setLanguage] = useState('zh');
+  const [filterState, setFilterState] = useState({ unclassified: false, noCity: false, showClassified: false, isWallMode: false });
+
+  const t = (path) => {
+    const keys = path.split('.');
+    let result = locales[language];
+    for (const key of keys) {
+      if (result != null && typeof result === 'object' && key in result) {
+        result = result[key];
+      } else {
+        return path;
+      }
+    }
+    return typeof result === 'string' ? result : path;
+  };
   // Ensure metadata defaults and migrate old or malformed data to object structure
   const robustMigrate = (list, defaultList = []) => {
     // CRITICAL: If the list exists but names are truncated (e.g., '美' instead of '美食'), 
@@ -582,7 +601,7 @@ function App() {
 
   const handleResetDatabase = async () => {
     console.log('--- RESET DATABASE START ---');
-    if (!window.confirm('确定要清空所有已分类的行程和事件吗？')) return;
+    if (!window.confirm(t('app.controls.resetConfirm'))) return;
     
     try {
       const basePhotos = (photoFiles || []).map(f => {
@@ -687,11 +706,11 @@ function App() {
          seenPaths.add(pathKey);
          
          const currentDate = photo.date || 'unknown';
-         if (currentDate !== lastDate) {
+         if (!filterState.isWallMode && currentDate !== lastDate) {
            result.push({
              type: 'date-header',
              id: `header-filter-multi-${currentDate}`,
-             title: formatDateHeader(currentDate),
+             title: formatDateHeader(currentDate, language),
              date: currentDate
            });
            lastDate = currentDate;
@@ -711,11 +730,11 @@ function App() {
        let lastDate = null;
        eventPhotos.forEach(photo => {
          const currentDate = photo.date || 'unknown';
-         if (currentDate !== lastDate) {
+         if (!filterState.isWallMode && currentDate !== lastDate) {
            result.push({
              type: 'date-header',
              id: `header-event-${currentDate}`,
-             title: formatDateHeader(currentDate),
+             title: formatDateHeader(currentDate, language),
              date: currentDate
            });
            lastDate = currentDate;
@@ -758,30 +777,32 @@ function App() {
     // 如果在行程模式下，显示该行程的所有事件 + 未分类照片
     if (selectedTripId) {
       const result = [];
-      // 1. 添加该行程的所有事件
-      baseEvents.forEach(event => {
-        result.push({
-          type: 'event',
-          id: event.event_id,
-          title: event.title,
-          item: event,
-          photos: basePhotos.filter(p => p.event_id === event.event_id)
+      // 1. 添加该行程的所有事件 (如果不是照片墙模式)
+      if (!filterState.isWallMode) {
+        baseEvents.forEach(event => {
+          result.push({
+            type: 'event',
+            id: event.event_id,
+            title: event.title,
+            item: event,
+            photos: basePhotos.filter(p => p.event_id === event.event_id)
+          });
         });
-      });
+      }
 
       // 2. 添加该行程下的未分类照片 (带日期分组)
       const unclassifiedPhotos = basePhotos
-        .filter(p => !p.event_id)
+        .filter(p => filterState.showClassified || !p.event_id)
         .sort((a, b) => new Date(b.timestamp || b.date) - new Date(a.timestamp || a.date));
 
       let lastDate = null;
       unclassifiedPhotos.forEach(photo => {
         const currentDate = photo.date || 'unknown';
-        if (currentDate !== lastDate) {
+        if (!filterState.isWallMode && currentDate !== lastDate) {
           result.push({
             type: 'date-header',
             id: `header-${currentDate}`,
-            title: formatDateHeader(currentDate),
+            title: formatDateHeader(currentDate, language),
             date: currentDate
           });
           lastDate = currentDate;
@@ -794,33 +815,37 @@ function App() {
 
     // 全局视图首页逻辑
     const result = [];
-    baseTrips.forEach(trip => {
-      result.push({
-        type: 'trip',
-        id: trip.trip_id,
-        title: trip.title,
-        item: trip,
-        photos: enrichedPhotos.filter(p => {
-          const isDirect = String(p.trip_id) === String(trip.trip_id);
-          const isIndirect = p.event_id && dbContent.events.some(e => 
-            String(e.event_id) === String(p.event_id) && String(e.trip_id) === String(trip.trip_id)
-          );
-          return isDirect || isIndirect;
-        }),
-        associatedEvents: dbContent.events.filter(e => String(e.trip_id) === String(trip.trip_id))
+    if (!filterState.isWallMode) {
+      baseTrips.forEach(trip => {
+        result.push({
+          type: 'trip',
+          id: trip.trip_id,
+          title: trip.title,
+          item: trip,
+          photos: enrichedPhotos.filter(p => {
+            const isDirect = String(p.trip_id) === String(trip.trip_id);
+            const isIndirect = p.event_id && dbContent.events.some(e => 
+              String(e.event_id) === String(p.event_id) && String(e.trip_id) === String(trip.trip_id)
+            );
+            return isDirect || isIndirect;
+          }),
+          associatedEvents: dbContent.events.filter(e => String(e.trip_id) === String(trip.trip_id))
+        });
       });
-    });
+    }
 
-    // 全局视图下不在任何 Trip 文件夹里的独立事件
-    baseEvents.filter(e => !e.trip_id).forEach(event => {
-      result.push({
-        type: 'event',
-        id: event.event_id,
-        title: event.title,
-        item: event,
-        photos: enrichedPhotos.filter(p => p.event_id === event.event_id)
+    // 全局视图下不在任何 Trip 文件夹里的独立事件 (如果不是照片墙模式)
+    if (!filterState.isWallMode) {
+      baseEvents.filter(e => !e.trip_id).forEach(event => {
+        result.push({
+          type: 'event',
+          id: event.event_id,
+          title: event.title,
+          item: event,
+          photos: enrichedPhotos.filter(p => p.event_id === event.event_id)
+        });
       });
-    });
+    }
 
 
     // Legacy single-select filter fallback
@@ -835,11 +860,11 @@ function App() {
         seenFavPaths.add(pathKey);
         
         const currentDate = photo.date || 'unknown';
-        if (currentDate !== lastDate) {
+        if (!filterState.isWallMode && currentDate !== lastDate) {
           result.push({
             type: 'date-header',
             id: `header-fav-${currentDate}`,
-            title: formatDateHeader(currentDate),
+            title: formatDateHeader(currentDate, language),
             date: currentDate
           });
           lastDate = currentDate;
@@ -849,9 +874,9 @@ function App() {
       return result;
     }
 
-    // 全局视图下没有任何归属的未分类照片 (带日期分组)
+    // 全局视图下的照片列表 (根据开关决定是否显示已归类的)
     const lonelyPhotos = basePhotos
-      .filter(p => !p.event_id && !p.trip_id)
+      .filter(p => filterState.showClassified || (!p.event_id && !p.trip_id))
       .sort((a, b) => new Date(b.timestamp || b.date) - new Date(a.timestamp || a.date));
 
     let lastGlobalDate = null;
@@ -862,11 +887,11 @@ function App() {
       seenGlobalPaths.add(pathKey);
 
       const currentDate = photo.date || 'unknown';
-      if (currentDate !== lastGlobalDate) {
+      if (!filterState.isWallMode && currentDate !== lastGlobalDate) {
         result.push({
           type: 'date-header',
           id: `header-global-${currentDate}`,
-          title: formatDateHeader(currentDate),
+          title: formatDateHeader(currentDate, language),
           date: currentDate
         });
         lastGlobalDate = currentDate;
@@ -920,11 +945,11 @@ function App() {
             </motion.div>
 
             <h1 className="text-6xl md:text-8xl font-black tracking-tighter mb-6 bg-gradient-to-br from-white via-white to-neutral-500 bg-clip-text text-transparent drop-shadow-sm">
-              Trip Archive
+              {t('app.title')}
             </h1>
             <p className="text-xl md:text-2xl text-neutral-400 max-w-2xl mx-auto mb-16 font-light leading-relaxed">
-              A physical-feeling local memory database. <br className="hidden md:block"/>
-              Zero uploads. Infinite capacity.
+              {t('app.subtitle')} <br className="hidden md:block"/>
+              {t('app.zeroUploads')}
             </p>
             
             <motion.button
@@ -940,12 +965,12 @@ function App() {
               {isScanning ? (
                 <>
                   <div className="w-6 h-6 border-4 border-white/20 border-t-white rounded-full animate-spin" />
-                  Granting Access...
+                  {t('app.grantingAccess')}
                 </>
               ) : (
                 <>
                   <Play size={24} className="text-blue-400 fill-blue-400/20 group-hover:fill-blue-400 transition-colors" />
-                  {hasPersistedHandle ? 'Restore Archive' : 'Select Root Folder'}
+                  {hasPersistedHandle ? t('app.restoreArchive') : t('app.selectFolder')}
                 </>
               )}
             </motion.button>
@@ -992,10 +1017,10 @@ function App() {
                     <span className="text-xl font-black tracking-tight text-white leading-none">Trip Archive</span>
                     {selectedTripId && (
                       <div className="flex items-center gap-1.5 mt-1">
-                        <span className="text-[10px] text-neutral-500 uppercase tracking-widest font-bold">所有行程</span>
+                        <span className="text-[10px] text-neutral-500 uppercase tracking-widest font-bold">{t('sidebar.trips')}</span>
                         <ChevronRight size={10} className="text-neutral-700" />
                         <span className="text-[10px] text-blue-400 uppercase tracking-widest font-black truncate max-w-[120px]">
-                          {dbContent.trips.find(t => String(t.trip_id) === String(selectedTripId))?.title || '未命名行程'}
+                          {dbContent.trips.find(t_item => String(t_item.trip_id) === String(selectedTripId))?.title || t('grid.unnamedTrip')}
                         </span>
                       </div>
                     )}
@@ -1004,7 +1029,7 @@ function App() {
                 
                 <nav className="hidden md:flex items-center gap-8">
                   <NavLink 
-                    label="Albums" 
+                    label={t('app.nav.albums')} 
                     active={activeFilter.type === 'all-albums' && !selectedTripId}
                     onClick={() => {
                       setSelectedTripId(null);
@@ -1012,19 +1037,19 @@ function App() {
                     }}
                   />
                   <NavLink 
-                    label="Events" 
+                    label={t('app.nav.events')} 
                     active={activeFilter.type === 'all-events'}
                     onClick={() => setActiveFilter({ type: 'all-events' })}
                   />
                   <NavLink 
-                    label="All Photos" 
+                    label={t('app.nav.allPhotos')} 
                     active={activeFilter.type === 'all'}
                     onClick={() => {
                       setActiveFilter({ type: 'all' });
                     }} 
                   />
                   <NavLink
-                    label="Map"
+                    label={t('app.nav.map')}
                     active={activeFilter.type === 'map'}
                     onClick={() => {
                       setSelectedTripId(null);
@@ -1039,7 +1064,7 @@ function App() {
                   <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 group-focus-within:text-[#0d7ff2] transition-colors" />
                   <input 
                     type="text" 
-                    placeholder="Search your memories..." 
+                    placeholder={t('app.searchPlaceholder')}
                     className="w-80 h-12 pl-12 pr-4 bg-slate-800/50 border border-slate-700 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#0d7ff2] focus:border-transparent transition-all font-medium"
                   />
                 </div>
@@ -1066,24 +1091,47 @@ function App() {
                           className="absolute right-0 mt-3 w-56 bg-[#1a1b1e]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl p-2 z-[150] ring-1 ring-black/50"
                         >
                           <div className="px-3 py-2 border-b border-white/5 mb-1">
-                            <p className="text-xs font-bold text-white">账户管理</p>
-                            <p className="text-[10px] text-neutral-500">本地离线模式</p>
+                            <p className="text-xs font-bold text-white">{t('app.account.title')}</p>
+                            <p className="text-[10px] text-neutral-500">{t('app.account.offlineMode')}</p>
                           </div>
                           
                           <button
-                            onClick={() => { setIsAvatarMenuOpen(false); showToast('设置功能即将上线 (WIP)', 'blue'); }}
+                            onClick={() => { setIsAvatarMenuOpen(false); showToast(t('app.account.settingsWip'), 'blue'); }}
                             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 transition-all group text-neutral-400"
                           >
                             <Settings size={18} className="group-hover:rotate-45 transition-transform" />
-                            <span className="text-sm font-medium text-neutral-200 group-hover:text-white">系统设置</span>
+                            <span className="text-sm font-medium text-neutral-200 group-hover:text-white">{t('app.account.systemSettings')}</span>
                           </button>
+
+                          <div className="px-2 py-1">
+                            <div className="flex items-center gap-1 bg-white/5 p-1 rounded-xl">
+                              <button 
+                                onClick={() => setLanguage('zh')}
+                                className={clsx(
+                                  "flex-1 py-1.5 rounded-lg text-[10px] font-black transition-all",
+                                  language === 'zh' ? "bg-blue-600 text-white shadow-lg" : "text-neutral-500 hover:text-neutral-300"
+                                )}
+                              >
+                                中文
+                              </button>
+                              <button 
+                                onClick={() => setLanguage('en')}
+                                className={clsx(
+                                  "flex-1 py-1.5 rounded-lg text-[10px] font-black transition-all",
+                                  language === 'en' ? "bg-blue-600 text-white shadow-lg" : "text-neutral-500 hover:text-neutral-300"
+                                )}
+                              >
+                                EN
+                              </button>
+                            </div>
+                          </div>
 
                           <button
                             onClick={() => { setIsAvatarMenuOpen(false); setIsPropertyModalOpen(true); }}
                             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 transition-all group text-blue-400"
                           >
                             <SlidersHorizontal size={18} className="group-hover:scale-110 transition-transform" />
-                            <span className="text-sm font-medium text-neutral-200 group-hover:text-white">属性编辑</span>
+                            <span className="text-sm font-medium text-neutral-200 group-hover:text-white">{t('app.account.propertyEdge')}</span>
                           </button>
                         </motion.div>
                       </>
@@ -1101,12 +1149,14 @@ function App() {
                 onContextMenu={onMenuAction}
                 onUpdateTrip={handleUpdateItem}
                 onCreateNew={() => setIsTripModalOpen(true)}
+                t={t}
               />
             ) : activeFilter.type === 'map' ? (
               <MapView
                 trips={displayedItems}
                 allPhotos={enrichedPhotos}
                 onNavigate={handleNavigate}
+                t={t}
               />
             ) : (
               <div className={`flex-1 flex flex-col min-h-0 ${activeFilter.type === 'all' ? 'bg-[#101922]' : ''}`}>
@@ -1119,6 +1169,7 @@ function App() {
                   activeFilter={activeFilter}
                   onFilterChange={setActiveFilter}
                   photos={enrichedPhotos}
+                  t={t}
                 />
               )}
 
@@ -1134,34 +1185,72 @@ function App() {
                   onUpdateItem={handleUpdateItem}
                   animatingTargetId={animatingTargetId}
                   metadata={dbContent}
+                  t={t}
                   subHeader={
                     <div className="px-0 pt-12 pb-8 flex items-center justify-between">
                       <div className="space-y-2">
-                        <h2 className="text-4xl font-black tracking-tight text-white">Switzerland Trip 2024</h2>
+                        <h2 className="text-4xl font-black tracking-tight text-white">{t('app.pageTitle')}</h2>
                         <div className="flex items-center gap-3 text-neutral-500 font-bold text-sm">
                           <Calendar size={14} />
                           <span>August 12 - August 24</span>
                           <span className="w-1.5 h-1.5 rounded-full bg-neutral-700 mx-1" />
-                          <span>142 items</span>
+                          <span>{t('app.imagesCount').replace('{{count}}', dbContent.photos.length)}</span>
                         </div>
                       </div>
                       <div className="flex items-center gap-3">
                         <button
                           onClick={handleResetDatabase}
                           className="flex items-center gap-2 px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-2xl text-xs font-bold text-red-400 hover:bg-red-500/20 transition-all active:scale-95"
-                          title="Clear Database"
+                          title={t('app.controls.resetDb')}
                         >
                           <Trash2 size={16} />
-                          Reset DB
+                          {t('app.controls.resetDb')}
+                        </button>
+                        <button
+                          onClick={() => setFilterState(prev => ({ ...prev, showClassified: !prev.showClassified }))}
+                          className={clsx(
+                            "flex items-center gap-2 px-4 py-3 rounded-2xl text-xs font-bold transition-all active:scale-95 border",
+                            filterState.showClassified 
+                              ? "bg-blue-500/20 border-blue-500/40 text-blue-400" 
+                              : "bg-white/5 border-white/10 text-neutral-500 hover:text-neutral-300"
+                          )}
+                        >
+                          <div className={clsx(
+                            "w-2 h-2 rounded-full",
+                            filterState.showClassified ? "bg-blue-400 animate-pulse" : "bg-neutral-700"
+                          )} />
+                          {t('app.controls.showClassified')}
+                        </button>
+                        <button
+                          onClick={() => setFilterState(prev => ({ ...prev, isWallMode: !prev.isWallMode }))}
+                          className={clsx(
+                            "flex items-center gap-2 px-4 py-3 rounded-2xl text-xs font-bold transition-all active:scale-95 border",
+                            filterState.isWallMode 
+                              ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.1)]" 
+                              : "bg-blue-500/10 border-blue-500/30 text-blue-400 shadow-[0_0_20px_rgba(59,130,246,0.1)]"
+                          )}
+                        >
+                          {filterState.isWallMode ? (
+                            <>
+                              <LayoutGrid size={16} className="animate-pulse" />
+                              <span>{t('app.controls.wallMode')}</span>
+                            </>
+                          ) : (
+                            <>
+                              <Clock size={16} />
+                              <span>{t('app.controls.timelineMode')}</span>
+                            </>
+                          )}
                         </button>
                         <FilterMenu
                           filterState={filterState}
                           onFilterChange={setFilterState}
                           photos={enrichedPhotos}
+                          t={t}
                         />
                         <button className="flex items-center gap-2 px-6 py-3 bg-blue-600 rounded-2xl text-sm font-bold text-white hover:bg-blue-500 transition-all shadow-xl shadow-blue-600/20 active:scale-95">
                           <Plus size={18} />
-                          Upload
+                          {t('app.controls.upload')}
                         </button>
                       </div>
                     </div>
@@ -1189,6 +1278,7 @@ function App() {
               categories={metadata.categories}
               cities={metadata.cities}
               selectedTripId={selectedTripId}
+              t={t}
             />
 
             <PropertyManagerModal
@@ -1196,6 +1286,7 @@ function App() {
               onClose={() => setIsPropertyModalOpen(false)}
               metadata={metadata}
               onUpdate={handleUpdateMetadata}
+              t={t}
             />
 
             <CreateEventModal 

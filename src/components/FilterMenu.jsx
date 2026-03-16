@@ -3,7 +3,7 @@ import { Tag, MapPin, Check, ChevronDown } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import clsx from 'clsx';
 
-export function FilterMenu({ filterState, onFilterChange, photos = [] }) {
+export function FilterMenu({ filterState, onFilterChange, photos = [], t }) {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef(null);
 
@@ -41,7 +41,7 @@ export function FilterMenu({ filterState, onFilterChange, photos = [] }) {
             <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-blue-500 rounded-full border-2 border-[#0b0c10]" />
           )}
         </div>
-        <span>Filter</span>
+        <span>{t('app.filters.label')}</span>
         {activeCount > 0 && (
           <span className="ml-1 px-1.5 py-0.5 bg-blue-500 text-white text-[10px] rounded-md leading-none">
             {activeCount}
@@ -59,26 +59,28 @@ export function FilterMenu({ filterState, onFilterChange, photos = [] }) {
             className="absolute right-0 mt-3 w-64 bg-[#1a1b1e]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl p-2 z-[150] ring-1 ring-black/50 overflow-hidden"
           >
             <div className="px-3 py-2 border-b border-white/5 mb-1">
-              <p className="text-xs font-bold text-white">智慧管理</p>
-              <p className="text-[10px] text-neutral-500">点击多选以过滤展示内容</p>
+              <p className="text-xs font-bold text-white">{t('app.filters.title')}</p>
+              <p className="text-[10px] text-neutral-500">{t('app.filters.subtitle')}</p>
             </div>
 
             <FilterOption 
               icon={Tag}
-              label="未分类照片"
+              label={t('app.filters.unclassified')}
               count={unclassifiedCount}
               isActive={filterState.unclassified}
               onClick={() => onFilterChange({ ...filterState, unclassified: !filterState.unclassified })}
               colorClass="text-purple-400"
+              t={t}
             />
 
             <FilterOption 
               icon={MapPin}
-              label="未标记城市"
+              label={t('app.filters.noCity')}
               count={noCityCount}
               isActive={filterState.noCity}
               onClick={() => onFilterChange({ ...filterState, noCity: !filterState.noCity })}
               colorClass="text-orange-400"
+              t={t}
             />
             
             {activeCount > 0 && (
@@ -86,7 +88,7 @@ export function FilterMenu({ filterState, onFilterChange, photos = [] }) {
                 onClick={() => onFilterChange({ unclassified: false, noCity: false })}
                 className="w-full mt-2 px-3 py-2 text-[10px] font-bold text-blue-400 hover:text-blue-300 text-center transition-colors uppercase tracking-widest"
               >
-                重置所有过滤器
+                {t('app.filters.reset')}
               </button>
             )}
           </motion.div>
@@ -96,7 +98,7 @@ export function FilterMenu({ filterState, onFilterChange, photos = [] }) {
   );
 }
 
-function FilterOption({ icon: Icon, label, count, isActive, onClick, colorClass }) {
+function FilterOption({ icon: Icon, label, count, isActive, onClick, colorClass, t }) {
   return (
     <button
       onClick={onClick}
@@ -116,7 +118,9 @@ function FilterOption({ icon: Icon, label, count, isActive, onClick, colorClass 
           <span className={clsx("text-xs font-medium", isActive ? "text-white" : "text-neutral-400 group-hover:text-neutral-200")}>
             {label}
           </span>
-          <span className="text-[9px] text-neutral-600 font-bold">{count} 张照片</span>
+          <span className="text-[9px] text-neutral-600 font-bold">
+            {t('app.grid.photosCount').replace('{{count}}', count)}
+          </span>
         </div>
       </div>
       <div className={clsx(
