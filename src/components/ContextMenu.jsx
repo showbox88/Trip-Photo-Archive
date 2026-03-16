@@ -40,11 +40,15 @@ export function ContextMenu({ menu, onClose, onAction, selectionCount, trips = [
     finalY = window.innerHeight - MENU_HEIGHT_ESTIMATE - 10;
   }
 
-  // Determine sub-menu direction
+  // Determine sub-menu horizontal direction
   const showSubmenuOnLeft = finalX + MENU_WIDTH + SUBMENU_WIDTH > window.innerWidth;
-  const subMenuPosClass = showSubmenuOnLeft 
-    ? "absolute right-full top-0 mr-2" 
-    : "absolute left-full top-0 ml-2";
+  // Determine sub-menu vertical direction: if menu bottom is in lower 40% of screen, anchor submenu to bottom
+  const SUBMENU_HEIGHT_ESTIMATE = 360;
+  const showSubmenuOnTop = finalY + MENU_HEIGHT_ESTIMATE > window.innerHeight - SUBMENU_HEIGHT_ESTIMATE;
+  const subMenuVert = showSubmenuOnTop ? 'bottom-0' : 'top-0';
+  const subMenuPosClass = showSubmenuOnLeft
+    ? `absolute right-full ${subMenuVert} mr-2`
+    : `absolute left-full ${subMenuVert} ml-2`;
   const subMenuAnimX = showSubmenuOnLeft ? 10 : -10;
 
   return (

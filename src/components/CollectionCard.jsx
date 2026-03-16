@@ -13,9 +13,10 @@ const STAGES = [
 ];
 
 // ─── Collection Card (竖向 Notion 画廊样式) ──────────────────────────────────────────
-export function CollectionCard({ type, item, photos, index, isSelected, onToggleSelection, onNavigate, onContextMenu, onUpdateTrip }) {
+export function CollectionCard({ type, item, photos, index, isSelected, onToggleSelection, onNavigate, onContextMenu, onUpdateTrip, onDropToEvent }) {
   const isTrip = type === 'trip';
   const itemId = isTrip ? item.trip_id : item.event_id;
+  const [isDragOver, setIsDragOver] = useState(false);
   const selectionId = `${type}:${itemId}`;
   
   // 颜色配置
@@ -53,16 +54,37 @@ export function CollectionCard({ type, item, photos, index, isSelected, onToggle
       onClick={(e) => { e.stopPropagation(); onToggleSelection(selectionId, index, e); }}
       onDoubleClick={(e) => { e.stopPropagation(); onNavigate({ type, id: itemId }); }}
       onContextMenu={(e) => onContextMenu(e, { ...item, type })}
+      onDragOver={!isTrip ? (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; setIsDragOver(true); } : undefined}
+      onDragLeave={!isTrip ? () => setIsDragOver(false) : undefined}
+      onDrop={!isTrip ? (e) => {
+        e.preventDefault();
+        setIsDragOver(false);
+        try {
+          const paths = JSON.parse(e.dataTransfer.getData('photo-paths'));
+          if (paths?.length) onDropToEvent?.(itemId, paths);
+        } catch {}
+      } : undefined}
       data-item-key={selectionId}
       className={clsx(
         'relative flex flex-col cursor-pointer group rounded-xl overflow-visible',
-        'bg-[#191a21] border border-white/5 shadow-lg transition-all duration-300',
-        isSelected 
-          ? (isTrip ? 'ring-4 ring-purple-500/50 shadow-[0_0_30px_rgba(168,85,247,0.4)]' : 'ring-4 ring-orange-500/50 shadow-[0_0_30px_rgba(249,115,22,0.4)]') 
-          : (isTrip ? 'hover:border-purple-500/30 hover:shadow-[0_0_40px_rgba(168,85,247,0.3)]' : 'hover:border-orange-500/30 hover:shadow-[0_0_40px_rgba(249,115,22,0.3)]'),
+        'bg-[#191a21] border shadow-lg transition-all duration-300',
+        isDragOver
+          ? 'border-orange-400 shadow-[0_0_40px_rgba(251,146,60,0.5)] scale-[1.02]'
+          : (isSelected
+            ? (isTrip ? 'ring-4 ring-purple-500/50 shadow-[0_0_30px_rgba(168,85,247,0.4)] border-white/5' : 'ring-4 ring-orange-500/50 shadow-[0_0_30px_rgba(249,115,22,0.4)] border-white/5')
+            : (isTrip ? 'border-white/5 hover:border-purple-500/30 hover:shadow-[0_0_40px_rgba(168,85,247,0.3)]' : 'border-white/5 hover:border-orange-500/30 hover:shadow-[0_0_40px_rgba(249,115,22,0.3)]')),
         activeMenu ? 'z-[200]' : 'z-10'
       )}
     >
+      {/* ── Drop overlay ── */}
+      {isDragOver && !isTrip && (
+        <div className="absolute inset-0 z-50 rounded-xl flex items-center justify-center bg-orange-500/10 border-2 border-orange-400 pointer-events-none">
+          <span className="text-orange-300 text-[11px] font-black uppercase tracking-wider bg-black/60 px-3 py-1.5 rounded-lg backdrop-blur-sm">
+            放入此事件
+          </span>
+        </div>
+      )}
+
       {/* ── Cover photo ── */}
       <div className="relative w-full aspect-[3/2] overflow-hidden rounded-t-xl shrink-0">
         {photos.length > 0 ? (

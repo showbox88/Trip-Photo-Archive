@@ -35,9 +35,18 @@ function groupItemsIntoRows(items) {
   return rows;
 }
 
-export function VirtualGrid({ items, onContextMenu, selectedIds, onToggleSelection, onToggleDateSelection, onNavigate, onUpdateItem, onUpdateTrip, animatingTargetId, metadata }) {
+export function VirtualGrid({ items, onContextMenu, selectedIds, onToggleSelection, onToggleDateSelection, onNavigate, onUpdateItem, onUpdateTrip, animatingTargetId, metadata, onDropToEvent }) {
   const parentRef = useRef(null);
   const updateHandler = onUpdateItem || onUpdateTrip;
+
+  const handlePhotoDragStart = (e, fileInfo) => {
+    // Drag all selected photos if this card is selected, otherwise just this one
+    const paths = (selectedIds.has(fileInfo.path) && selectedIds.size > 1)
+      ? Array.from(selectedIds).filter(id => !id.includes(':'))
+      : [fileInfo.path];
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('photo-paths', JSON.stringify(paths));
+  };
 
   // Selection box state
   const [dragStart, setDragStart] = useState(null);
@@ -77,6 +86,8 @@ export function VirtualGrid({ items, onContextMenu, selectedIds, onToggleSelecti
 
   const onMouseDown = (e) => {
     if (e.button !== 0 || e.target.closest('button') || e.target.closest('input')) return;
+    // If clicking on a draggable photo card, let HTML5 drag handle it — don't start rect selection
+    if (e.target.closest('[draggable="true"]')) return;
     setDragStart({ x: e.clientX, y: e.clientY });
     setDragCurrent({ x: e.clientX, y: e.clientY });
     setIsDragging(false);
@@ -118,6 +129,55 @@ export function VirtualGrid({ items, onContextMenu, selectedIds, onToggleSelecti
       window.removeEventListener('mouseup', onMouseUp);
     };
   }, [dragStart, dragCurrent, isDragging]);
+
+  // Safety cleanup: if an HTML5 drag ends while rect selection is active, reset state
+  useEffect(() => {
+    const cleanup = () => {
+      setDragStart(null);
+      setDragCurrent(null);
+      setIsDragging(false);
+      dragWasActive.current = false;
+    };
+    window.addEventListener('dragend', cleanup);
+    return () => window.removeEventListener('dragend', cleanup);
+  }, []);
+
+  // Auto-scroll the grid when dragging near top/bottom edge
+  useEffect(() => {
+    let animFrame = null;
+    const ZONE = 120;   // px from edge to start scrolling
+    const MAX_SPEED = 18;
+
+    const onDragOver = (e) => {
+      const container = parentRef.current;
+      if (!container) return;
+      const rect = container.getBoundingClientRect();
+      const relY = e.clientY - rect.top;
+      const h = rect.height;
+
+      let speed = 0;
+      if (relY < ZONE) speed = -MAX_SPEED * (1 - relY / ZONE);
+      else if (relY > h - ZONE) speed = MAX_SPEED * (1 - (h - relY) / ZONE);
+
+      if (animFrame) cancelAnimationFrame(animFrame);
+      if (speed !== 0) {
+        const tick = () => { container.scrollBy(0, speed); animFrame = requestAnimationFrame(tick); };
+        animFrame = requestAnimationFrame(tick);
+      }
+    };
+
+    const stop = () => { if (animFrame) cancelAnimationFrame(animFrame); animFrame = null; };
+
+    window.addEventListener('dragover', onDragOver);
+    window.addEventListener('dragend', stop);
+    window.addEventListener('drop', stop);
+    return () => {
+      window.removeEventListener('dragover', onDragOver);
+      window.removeEventListener('dragend', stop);
+      window.removeEventListener('drop', stop);
+      stop();
+    };
+  }, []);
 
   const selectionBoxStyle = useMemo(() => {
     if (!dragStart || !dragCurrent || !isDragging) return null;
@@ -214,6 +274,7 @@ export function VirtualGrid({ items, onContextMenu, selectedIds, onToggleSelecti
                           fileInfo={item}
                           animatingTargetId={animatingTargetId}
                           metadata={metadata}
+                          onDragStart={(e) => handlePhotoDragStart(e, item)}
                         />
                       );
                     }
@@ -230,6 +291,7 @@ export function VirtualGrid({ items, onContextMenu, selectedIds, onToggleSelecti
                         onUpdateTrip={updateHandler}
                         onNavigate={onNavigate}
                         onContextMenu={onContextMenu}
+                        onDropToEvent={onDropToEvent}
                       />
                     );
                   })}

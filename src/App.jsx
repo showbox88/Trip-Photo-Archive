@@ -1130,9 +1130,9 @@ function App() {
             <div className="flex-1 flex overflow-hidden">
               <div className="flex-1 flex flex-col relative">
                 {/* Virtualized Infinite Grid */}
-                <VirtualGrid 
-                  items={displayedItems} 
-                  onContextMenu={handleItemContextMenu} 
+                <VirtualGrid
+                  items={displayedItems}
+                  onContextMenu={handleItemContextMenu}
                   selectedIds={selectedIds}
                   onToggleSelection={toggleSelection}
                   onToggleDateSelection={handleToggleDateSelection}
@@ -1140,6 +1140,7 @@ function App() {
                   onUpdateItem={handleUpdateItem}
                   animatingTargetId={animatingTargetId}
                   metadata={dbContent}
+                  onDropToEvent={handleAssignToEvent}
                 />
 
                 <ActionBar 

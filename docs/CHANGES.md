@@ -87,3 +87,34 @@ const rawUrl = useObjectUrl(thumbChecked && !thumbUrl ? fileInfo.handle : null);
   - 末尾追加 `new-page` 行
 - `useVirtualizer` 使用 `measureElement` ref 自动测量实际行高（无需精确估算）
 - 框选（drag-to-select）逻辑保留，改为查询 `parentRef` 下的 `[data-item-key]` 元素（只有可见行有 DOM 节点）
+
+---
+
+## 四、照片拖拽归档
+
+### 功能说明
+可将照片直接拖拽到 Event 卡片上，松手后自动归入该事件，效果等同于右键菜单"添加到已有事件"。
+
+### 实现文件
+
+**`src/components/PhotoCard.jsx`**
+- 添加 `draggable` 属性和 `onDragStart` prop
+- 拖拽时若照片已被选中且有多张，则携带全部选中照片路径；否则只携带当前照片
+
+**`src/components/VirtualGrid.jsx`**
+- `handlePhotoDragStart`：将路径列表序列化为 JSON 存入 `dataTransfer['photo-paths']`
+- `onMouseDown` 增加判断：目标为 `draggable` 元素时跳过框选，避免拖拽图片时触发框选逻辑
+- `dragend` 事件清理框选状态（防止极端情况下状态残留）
+- 自动滚动：拖拽时鼠标靠近顶部/底部 120px 区域自动滚动容器，方便拖到屏幕外的 Event
+
+**`src/components/CollectionCard.jsx`**（仅 Event 类型响应，Trip 不响应）
+- `onDragOver`：阻止默认行为，设置高亮状态
+- `onDrop`：读取 `photo-paths`，调用 `onDropToEvent(eventId, paths)`
+- 悬停时显示橙色光边 + "放入此事件"遮罩提示
+
+**`src/App.jsx`**
+- 将已有的 `handleAssignToEvent` 作为 `onDropToEvent` prop 传入 `VirtualGrid`
+
+### 右键菜单边界检测（`src/components/ContextMenu.jsx`）
+- 原有逻辑：子菜单只做左右翻转
+- 新增垂直检测：菜单出现在屏幕下方时，子菜单改为向上展开（`bottom-0`），不被 ActionBar 遮挡

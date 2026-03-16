@@ -7,7 +7,7 @@ import { format } from 'date-fns';
 import clsx from 'clsx';
 import { getPropertyColor } from '../utils/propertyColor';
 
-export const PhotoCard = memo(function PhotoCard({ fileInfo, index, onContextMenu, isSelected, onToggleSelection, onNavigate, onUpdate, animatingTargetId, metadata }) {
+export const PhotoCard = memo(function PhotoCard({ fileInfo, index, onContextMenu, isSelected, onToggleSelection, onNavigate, onUpdate, animatingTargetId, metadata, onDragStart }) {
   const categories = metadata?.categories || [];
   const cities = metadata?.cities || [];
 
@@ -47,6 +47,8 @@ export const PhotoCard = memo(function PhotoCard({ fileInfo, index, onContextMen
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.2 }}
+      draggable
+      onDragStart={onDragStart}
       onContextMenu={(e) => onContextMenu(e, fileInfo)}
       onClick={(e) => {
         e.stopPropagation();
