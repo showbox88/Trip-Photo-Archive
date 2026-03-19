@@ -3,7 +3,18 @@ import { Tag, MapPin, Check, ChevronDown } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import clsx from 'clsx';
 
-export function FilterMenu({ filterState, onFilterChange, photos = [], t }) {
+const DEFAULT_STRINGS = {
+  'app.filters.label': '筛选',
+  'app.filters.title': '快速筛选',
+  'app.filters.subtitle': '聚焦未整理的照片',
+  'app.filters.unclassified': '未分类照片',
+  'app.filters.noCity': '无城市照片',
+  'app.filters.reset': '清除筛选',
+  'app.grid.photosCount': '{{count}} 张',
+};
+
+export function FilterMenu({ filterState, onFilterChange, photos = [], t: tProp }) {
+  const t = tProp || ((key) => DEFAULT_STRINGS[key] ?? key);
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef(null);
 

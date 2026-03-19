@@ -17,6 +17,7 @@ import { ActionBar } from './components/ActionBar';
 import { AlbumsView } from './components/AlbumsView';
 import { PropertyManagerModal } from './components/PropertyManagerModal';
 import { FilterMenu } from './components/FilterMenu';
+import { MapView } from './components/MapView';
 import clsx from 'clsx';
 
 function NavLink({ label, active, onClick }) {
@@ -1040,7 +1041,11 @@ function App() {
                       setActiveFilter({ type: 'all' });
                     }} 
                   />
-                  <NavLink label="Map" />
+                  <NavLink
+                    label="Map"
+                    active={activeFilter.type === 'all-map'}
+                    onClick={() => setActiveFilter({ type: 'all-map' })}
+                  />
                 </nav>
               </div>
 
@@ -1151,12 +1156,31 @@ function App() {
 
             {/* Content Area Rendering Logic */}
             {activeFilter.type === 'all-albums' ? (
-              <AlbumsView 
+              <AlbumsView
                 trips={displayedItems}
                 onNavigate={handleNavigate}
                 onContextMenu={onMenuAction}
                 onUpdateTrip={handleUpdateItem}
                 onCreateNew={() => setIsTripModalOpen(true)}
+              />
+            ) : activeFilter.type === 'all-map' ? (
+              <MapView
+                trips={dbContent.trips.map(trip => ({
+                  type: 'trip',
+                  id: trip.trip_id,
+                  title: trip.title,
+                  item: trip,
+                  photos: enrichedPhotos.filter(p => {
+                    const isDirect = String(p.trip_id) === String(trip.trip_id);
+                    const isIndirect = p.event_id && dbContent.events.some(e =>
+                      String(e.event_id) === String(p.event_id) && String(e.trip_id) === String(trip.trip_id)
+                    );
+                    return isDirect || isIndirect;
+                  }),
+                  associatedEvents: dbContent.events.filter(e => String(e.trip_id) === String(trip.trip_id))
+                }))}
+                allPhotos={enrichedPhotos}
+                onNavigate={handleNavigate}
               />
             ) : (
               <div className={`flex-1 flex flex-col min-h-0 ${activeFilter.type === 'all' ? 'bg-[#101922]' : ''}`}>

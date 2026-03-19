@@ -16,7 +16,22 @@ const PRESET_COLORS = [
   '#4ade80', // green-400
 ];
 
-export function PropertyManagerModal({ isOpen, onClose, metadata, onUpdate, t }) {
+const DEFAULT_STRINGS = {
+  'app.propertyModal.title': '属性管理',
+  'app.propertyModal.subtitle': '管理分类、城市和标签',
+  'app.propertyModal.tabCategories': '分类',
+  'app.propertyModal.tabCities': '城市',
+  'app.propertyModal.tabTags': '标签',
+  'app.propertyModal.addPlaceholder': '添加新{{tab}}...',
+  'app.propertyModal.addButton': '添加',
+  'app.propertyModal.clickToChangeColor': '点击更改颜色',
+  'app.propertyModal.delete': '删除',
+  'app.propertyModal.emptyState': '暂无{{tab}}',
+  'app.propertyModal.done': '完成',
+};
+
+export function PropertyManagerModal({ isOpen, onClose, metadata, onUpdate, t: tProp }) {
+  const t = tProp || ((key) => DEFAULT_STRINGS[key] ?? key);
   const [activeTab, setActiveTab] = useState('categories'); // 'categories' | 'cities' | 'tags'
   const [newValue, setNewValue] = useState('');
   const [hoveredColorIdx, setHoveredColorIdx] = useState(null);

@@ -10,6 +10,15 @@ import clsx from 'clsx';
 
 delete L.Icon.Default.prototype._getIconUrl;
 
+const DEFAULT_STRINGS = {
+  'app.nav.map': '地图',
+  'app.map.event': '事件',
+  'app.map.route': '路线',
+  'app.map.photosOnMap': '{{count}} 张照片有定位',
+  'app.map.noGps': '该事件无GPS数据',
+  'app.map.gpsHint': '拍摄时开启位置权限即可在地图显示',
+};
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function normPath(p) {
@@ -399,7 +408,8 @@ function ExpandedPhotoOverlay({ photo, onClose }) {
 
 // ─── Main MapView ──────────────────────────────────────────────────────────────
 
-export function MapView({ trips, allPhotos, onNavigate, t }) {
+export function MapView({ trips, allPhotos, onNavigate, t: tProp }) {
+  const t = tProp || ((key) => DEFAULT_STRINGS[key] ?? key);
   const [selectedTripId, setSelectedTripId] = useState(() => trips[0]?.id || null);
   const [hoveredEventId, setHoveredEventId] = useState(null);
   const [selectedEventId, setSelectedEventId] = useState(null);
@@ -412,11 +422,16 @@ export function MapView({ trips, allPhotos, onNavigate, t }) {
   // Clear selected event + pinned photo when trip changes
   useEffect(() => { setSelectedEventId(null); setPinnedPhoto(null); setExpandedPhoto(null); }, [selectedTripId]);
 
-  // Route events: sorted, with coords + cover photo pre-computed
+  // Route events: sorted by earliest photo timestamp, with coords + cover photo pre-computed
   const routeEvents = useMemo(() => {
     if (!selectedTrip) return [];
+    const getEarliestPhotoTime = (event) => {
+      const photos = allPhotos.filter(p => String(p.event_id) === String(event.event_id));
+      if (photos.length === 0) return new Date(event.date || 0).getTime();
+      return Math.min(...photos.map(p => new Date(p.timestamp || p.date || 0).getTime()));
+    };
     return [...selectedTrip.associatedEvents]
-      .sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0))
+      .sort((a, b) => getEarliestPhotoTime(a) - getEarliestPhotoTime(b))
       .map((event, i) => ({
         event,
         coords: getEventCoords(event, allPhotos),

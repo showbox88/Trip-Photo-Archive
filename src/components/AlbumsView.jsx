@@ -5,7 +5,18 @@ import { useObjectUrl } from '../hooks/useObjectUrl';
 import clsx from 'clsx';
 import { format } from 'date-fns';
 
-export function AlbumsView({ trips, onNavigate, onContextMenu, onUpdateTrip, onCreateNew, t }) {
+const DEFAULT_STRINGS = {
+  'app.albums.title': '旅行相册',
+  'app.albums.subtitle': '共 {{photoCount}} 张照片，{{tripCount}} 个旅行',
+  'app.albums.filter': '筛选',
+  'app.albums.newArchive': '新建归档',
+  'app.albums.createNew': '创建新相册',
+  'app.albums.addPhotos': '添加照片开始归档',
+  'app.albums.unknownLocation': '未知地点',
+};
+
+export function AlbumsView({ trips, onNavigate, onContextMenu, onUpdateTrip, onCreateNew, t: tProp }) {
+  const t = tProp || ((key) => DEFAULT_STRINGS[key] ?? key);
   // trips from activeFilter logic in App.jsx are passed in as displayedItems.
   // They are structured as: { type: 'trip', id, title, item, photos, associatedEvents }
   
