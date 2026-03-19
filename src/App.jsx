@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 import {
-  FolderOpen, Settings, Play,
+  FolderOpen, RefreshCw, Settings, Play,
   SlidersHorizontal, Search, Plus, Trash2,
   ChevronRight, CheckCircle2, Archive, Calendar
 } from 'lucide-react';
@@ -56,17 +56,19 @@ const formatDateHeader = (dateStr) => {
 };
 
 function App() {
-  const { 
-    initWorkspace, 
+  const {
+    initWorkspace,
     restoreWorkspace,
+    rescanWorkspace,
+    resyncExif,
     checkPersistedWorkspace,
     hasPersistedHandle,
-    isScanning, 
-    photoFiles, 
-    error, 
-    dbHandle, 
-    dbContent, 
-    saveToDatabase 
+    isScanning,
+    photoFiles,
+    error,
+    dbHandle,
+    dbContent,
+    saveToDatabase
   } = useFileSystemAccess();
   
   const { contextMenu, handleContextMenu, closeMenu } = useContextMenu();
@@ -280,6 +282,16 @@ function App() {
     handleContextMenu(event, item);
   };
 
+  const COLOR_PALETTE = [
+    '#60a5fa', '#f87171', '#34d399', '#fb923c', '#a78bfa',
+    '#f472b6', '#fbbf24', '#38bdf8', '#4ade80', '#e879f9',
+    '#94a3b8', '#fdba74', '#6ee7b7', '#c4b5fd', '#fca5a5',
+  ];
+  const pickNextColor = (existingItems) => {
+    const usedColors = new Set((existingItems || []).map(i => i.color));
+    return COLOR_PALETTE.find(c => !usedColors.has(c)) || COLOR_PALETTE[existingItems.length % COLOR_PALETTE.length];
+  };
+
   const onMenuAction = async (actionId, targetItem, extraData) => {
     if (actionId === 'create-event') {
       const targets = enrichedPhotos.filter(p => selectedIds.has(p.path));
@@ -387,7 +399,7 @@ function App() {
         // 2. Add to global cities if missing
         let newCities = [...(dbContent.cities || [])];
         if (!newCities.some(c => c.name === trimmedCity)) {
-           newCities.push({ name: trimmedCity, color: '#60a5fa' });
+           newCities.push({ name: trimmedCity, color: pickNextColor(newCities) });
         }
         newCities.sort((a, b) => a.name.localeCompare(b.name));
 
@@ -398,6 +410,19 @@ function App() {
         });
         showToast(`已创建预览并标记为 ${trimmedCity}`, 'emerald');
         setSelectedIds(new Set());
+      }
+    } else if (actionId === 'create-category') {
+      const catName = window.prompt('请输入新的分类名称:');
+      if (catName && catName.trim()) {
+        const trimmedCat = catName.trim();
+        let newCategories = [...(dbContent.categories || metadata.categories)];
+        if (!newCategories.some(c => c.name === trimmedCat)) {
+          newCategories.push({ name: trimmedCat, color: pickNextColor(newCategories) });
+          await saveToDatabase({ ...dbContent, categories: newCategories });
+          showToast(`已添加分类 "${trimmedCat}"`, 'blue');
+        } else {
+          showToast(`分类 "${trimmedCat}" 已存在`, 'orange');
+        }
       }
     } else if (actionId === 'info') {
       const type = targetItem.type || (targetItem.path ? 'photo' : (targetItem.trip_id ? 'trip' : 'event'));
@@ -1020,11 +1045,57 @@ function App() {
               </div>
 
               <div className="flex items-center gap-6">
+                {/* 文件夹 & 重新读取按钮 */}
+                {isScanning ? (
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-neutral-400 text-xs font-bold">
+                    <div className="w-3.5 h-3.5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                    扫描中...
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    {hasPersistedHandle && !dbHandle ? (
+                      <button
+                        onClick={handleInitialize}
+                        className="flex items-center gap-2 px-3 py-2 rounded-xl bg-blue-600/20 border border-blue-500/40 text-blue-400 hover:bg-blue-600/30 transition-all text-xs font-bold animate-pulse"
+                      >
+                        <FolderOpen size={14} />
+                        恢复档案
+                      </button>
+                    ) : (
+                      <button
+                        onClick={async () => { await initWorkspace(); }}
+                        className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-neutral-400 hover:text-white hover:bg-white/10 transition-all text-xs font-bold"
+                      >
+                        <FolderOpen size={14} />
+                        {dbHandle ? '重新选择' : '选择文件夹'}
+                      </button>
+                    )}
+                    {dbHandle && (
+                      <button
+                        onClick={rescanWorkspace}
+                        className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-neutral-400 hover:text-white hover:bg-white/10 transition-all text-xs font-bold"
+                      >
+                        <RefreshCw size={14} />
+                        重新扫描
+                      </button>
+                    )}
+                    {dbHandle && (
+                      <button
+                        onClick={resyncExif}
+                        className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-neutral-400 hover:text-white hover:bg-white/10 transition-all text-xs font-bold"
+                      >
+                        <RefreshCw size={14} />
+                        重新读取
+                      </button>
+                    )}
+                  </div>
+                )}
+
                 <div className="relative group">
                   <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 group-focus-within:text-[#0d7ff2] transition-colors" />
-                  <input 
-                    type="text" 
-                    placeholder="Search your memories..." 
+                  <input
+                    type="text"
+                    placeholder="Search your memories..."
                     className="w-80 h-12 pl-12 pr-4 bg-slate-800/50 border border-slate-700 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#0d7ff2] focus:border-transparent transition-all font-medium"
                   />
                 </div>

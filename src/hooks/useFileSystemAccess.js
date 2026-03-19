@@ -36,6 +36,7 @@ async function getFilesFromDirectory(directoryHandle, path = '', seen = new Set(
 export function useFileSystemAccess() {
   const [photoFiles, setPhotoFiles] = useState([]);
   const [isScanning, setIsScanning] = useState(false);
+  const [dirHandle, setDirHandle] = useState(null);
   const [dbHandle, setDbHandle] = useState(null);
   const [dbContent, setDbContent] = useState({ 
     trips: [], 
@@ -100,6 +101,7 @@ export function useFileSystemAccess() {
       // 1.1 Persist for later
       await idb.set('last_handle', directoryHandle);
       setHasPersistedHandle(true);
+      setDirHandle(directoryHandle);
 
       // 2. Scan for photos
       const files = await getFilesFromDirectory(directoryHandle);
@@ -194,6 +196,8 @@ export function useFileSystemAccess() {
           throw new Error('未获得权限，无法访问文件夹。');
         }
       }
+
+      setDirHandle(directoryHandle);
 
       // 2. Scan for photos
       const files = await getFilesFromDirectory(directoryHandle);
@@ -312,11 +316,12 @@ export function useFileSystemAccess() {
 
   /**
    * 增量同步照片的 EXIF 信息
+   * @param {boolean} forceAll - 强制全量重扫所有照片的 EXIF
    */
-  const syncPhotosWithExif = async (files, currentDb, fileHandle) => {
+  const syncPhotosWithExif = async (files, currentDb, fileHandle, forceAll = false) => {
     let hasChanges = false;
     const existingPaths = new Set(currentDb.photos.map(p => p.file_name.replace(/\\/g, '/').toLowerCase()));
-    
+
     // Migration: ensure categories, cities, tags are object arrays
     const migrateList = (list) => {
       if (!list || !Array.isArray(list)) return [];
@@ -336,13 +341,14 @@ export function useFileSystemAccess() {
     ]);
     const cities = migrateList(currentDb.cities || []);
     const tags = migrateList(currentDb.tags || []);
-    
+
     // 1. 发现新照片
     const newPhotos = files.filter(f => !existingPaths.has(f.path.replace(/\\/g, '/').toLowerCase()));
-    
-    // 2. 检查旧照片是否缺失关键信息 (可选，暂不强制，避免大规模扫描性能问题)
-    // 但如果用户说“没有信息”，可能是之前已经扫入库但没解析。
-    const missingInfoPhotos = currentDb.photos.filter(p => !p.latitude && !p.date);
+
+    // 2. 检查旧照片是否缺失关键信息；forceAll 时强制全量重扫
+    const missingInfoPhotos = forceAll
+      ? [...currentDb.photos]
+      : currentDb.photos.filter(p => !p.latitude && !p.date);
     
     if (newPhotos.length === 0 && missingInfoPhotos.length === 0) return;
 
@@ -429,5 +435,29 @@ export function useFileSystemAccess() {
     }
   };
 
-  return { initWorkspace, restoreWorkspace, checkPersistedWorkspace, hasPersistedHandle, isScanning, photoFiles, error, dbHandle, dbContent, saveToDatabase };
+  const rescanWorkspace = useCallback(async () => {
+    if (!dirHandle || !dbHandle) return;
+    setIsScanning(true);
+    try {
+      const files = await getFilesFromDirectory(dirHandle);
+      setPhotoFiles(files);
+      await syncPhotosWithExif(files, dbContent, dbHandle, false);
+    } finally {
+      setIsScanning(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dirHandle, dbHandle, dbContent]);
+
+  const resyncExif = useCallback(async () => {
+    if (!dbHandle || photoFiles.length === 0) return;
+    setIsScanning(true);
+    try {
+      await syncPhotosWithExif(photoFiles, dbContent, dbHandle, true);
+    } finally {
+      setIsScanning(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dbHandle, photoFiles, dbContent]);
+
+  return { initWorkspace, restoreWorkspace, rescanWorkspace, resyncExif, checkPersistedWorkspace, hasPersistedHandle, isScanning, photoFiles, error, dbHandle, dbContent, saveToDatabase };
 }

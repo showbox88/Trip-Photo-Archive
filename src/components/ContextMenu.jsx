@@ -57,7 +57,7 @@ export function ContextMenu({ menu, onClose, onAction, selectionCount, trips = [
       animate={{ opacity: 1, scale: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95 }}
       transition={{ duration: 0.1 }}
-      className="fixed z-[100] min-w-[220px] bg-[#1a1b1e]/90 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl p-2 flex flex-col gap-1 ring-1 ring-black/50"
+      className="fixed z-[100] min-w-[220px] bg-[#1a1b1e] border border-white/10 rounded-2xl shadow-2xl p-2 flex flex-col gap-1 ring-1 ring-black/50"
       style={{ top: finalY, left: finalX }}
       onMouseLeave={() => setActiveSubmenu(null)}
     >
@@ -97,24 +97,32 @@ export function ContextMenu({ menu, onClose, onAction, selectionCount, trips = [
                   initial={{ opacity: 0, x: subMenuAnimX }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: subMenuAnimX }}
-                  className={`${subMenuPosClass} min-w-[160px] bg-[#1a1b1e]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl p-2 flex flex-col gap-1 ring-1 ring-black/50`}
+                  className={`${subMenuPosClass} w-[280px] bg-[#1a1b1e] border border-white/10 rounded-2xl shadow-2xl p-2 ring-1 ring-black/50`}
                 >
-                  <p className="px-3 py-1.5 text-[9px] uppercase tracking-widest text-neutral-600 font-black">更新分类为</p>
-                  <div className="max-h-[300px] overflow-y-auto custom-scrollbar">
-                    {categories.map((cat, idx) => {
-                      const name = typeof cat === 'object' ? cat.name : cat;
-                      const color = typeof cat === 'object' ? cat.color : '#60a5fa';
-                      return (
-                        <button
-                          key={`${name}-${idx}`}
-                          onClick={() => handleAction('set-category', { category: name })}
-                          className="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-blue-500/20 transition-all group text-left"
-                        >
-                          <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
-                          <span className="text-xs font-medium text-neutral-300 group-hover:text-white truncate">{name}</span>
-                        </button>
-                      );
-                    })}
+                  <button
+                    onClick={() => handleAction('create-category')}
+                    className="w-full flex items-center gap-3 px-3 py-2 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 transition-all group text-left mb-1"
+                  >
+                    <PlusCircle size={14} className="text-blue-400" />
+                    <span className="text-xs font-bold text-blue-400">添加新分类...</span>
+                  </button>
+                  <div className="max-h-[260px] overflow-y-auto custom-scrollbar">
+                    <div className="grid grid-cols-5 gap-1 p-1">
+                      {categories.map((cat, idx) => {
+                        const name = typeof cat === 'object' ? cat.name : cat;
+                        const color = typeof cat === 'object' ? cat.color : '#60a5fa';
+                        return (
+                          <button
+                            key={`${name}-${idx}`}
+                            onClick={() => handleAction('set-category', { category: name })}
+                            className="flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-blue-500/20 transition-all group"
+                          >
+                            <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                            <span className="text-[9px] font-medium text-neutral-300 group-hover:text-white w-full text-center leading-tight break-all line-clamp-2">{name}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 </motion.div>
               )}
@@ -139,33 +147,35 @@ export function ContextMenu({ menu, onClose, onAction, selectionCount, trips = [
                   initial={{ opacity: 0, x: subMenuAnimX }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: subMenuAnimX }}
-                  className={`${subMenuPosClass} min-w-[160px] bg-[#1a1b1e]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl p-2 flex flex-col gap-1 ring-1 ring-black/50`}
+                  className={`${subMenuPosClass} w-[360px] bg-[#1a1b1e] border border-white/10 rounded-2xl shadow-2xl p-2 ring-1 ring-black/50`}
                 >
-                  <p className="px-3 py-1.5 text-[9px] uppercase tracking-widest text-neutral-600 font-black">更新城市为</p>
-                  <div className="max-h-[300px] overflow-y-auto custom-scrollbar">
-                    <button
-                      onClick={() => handleAction('create-city')}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 transition-all group text-left mb-1"
-                    >
-                      <PlusCircle size={14} className="text-emerald-400" />
-                      <span className="text-xs font-bold text-emerald-400">新建城市...</span>
-                    </button>
-                    {cities.map((city, idx) => {
-                      const name = typeof city === 'object' ? city.name : city;
-                      const color = typeof city === 'object' ? city.color : '#10b981';
-                      return (
-                        <button
-                          key={`${name}-${idx}`}
-                          onClick={() => handleAction('set-city', { city: name })}
-                          className="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-emerald-500/20 transition-all group text-left"
-                        >
-                          <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
-                          <span className="text-xs font-medium text-neutral-300 group-hover:text-white truncate">{name}</span>
-                        </button>
-                      );
-                    })}
-                    {cities.length === 0 && (
+                  <button
+                    onClick={() => handleAction('create-city')}
+                    className="w-full flex items-center gap-3 px-3 py-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 transition-all group text-left mb-1"
+                  >
+                    <PlusCircle size={14} className="text-emerald-400" />
+                    <span className="text-xs font-bold text-emerald-400">新建城市...</span>
+                  </button>
+                  <div className="max-h-[260px] overflow-y-auto custom-scrollbar">
+                    {cities.length === 0 ? (
                       <p className="px-3 py-4 text-[10px] text-neutral-600 italic text-center">暂无保存城市</p>
+                    ) : (
+                      <div className="grid grid-cols-5 gap-1 p-1">
+                        {cities.map((city, idx) => {
+                          const name = typeof city === 'object' ? city.name : city;
+                          const color = typeof city === 'object' ? city.color : '#10b981';
+                          return (
+                            <button
+                              key={`${name}-${idx}`}
+                              onClick={() => handleAction('set-city', { city: name })}
+                              className="flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-emerald-500/20 transition-all group"
+                            >
+                              <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                              <span className="text-[9px] font-medium text-neutral-300 group-hover:text-white w-full text-center leading-tight break-words line-clamp-2">{name}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
                     )}
                   </div>
                 </motion.div>
@@ -191,7 +201,7 @@ export function ContextMenu({ menu, onClose, onAction, selectionCount, trips = [
                   initial={{ opacity: 0, x: subMenuAnimX }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: subMenuAnimX }}
-                  className={`${subMenuPosClass} min-w-[210px] bg-[#1a1b1e]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl p-2 flex flex-col gap-1 ring-1 ring-black/50`}
+                  className={`${subMenuPosClass} min-w-[210px] bg-[#1a1b1e] border border-white/10 rounded-2xl shadow-2xl p-2 flex flex-col gap-1 ring-1 ring-black/50`}
                 >
                   <p className="px-3 py-1.5 text-[9px] uppercase tracking-widest text-neutral-600 font-black">更新评分</p>
                   <div className="flex flex-col gap-2 p-2 bg-white/5 rounded-xl border border-white/5 mx-1">
@@ -234,7 +244,7 @@ export function ContextMenu({ menu, onClose, onAction, selectionCount, trips = [
                   initial={{ opacity: 0, x: subMenuAnimX }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: subMenuAnimX }}
-                  className={`${subMenuPosClass} min-w-[200px] bg-[#1a1b1e]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl p-2 flex flex-col gap-1 ring-1 ring-black/50`}
+                  className={`${subMenuPosClass} min-w-[200px] bg-[#1a1b1e] border border-white/10 rounded-2xl shadow-2xl p-2 flex flex-col gap-1 ring-1 ring-black/50`}
                 >
                   <p className="px-3 py-1.5 text-[9px] uppercase tracking-widest text-neutral-600 font-black">选择目标事件</p>
                   {events.length === 0 ? (
@@ -289,7 +299,7 @@ export function ContextMenu({ menu, onClose, onAction, selectionCount, trips = [
                   initial={{ opacity: 0, x: subMenuAnimX }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: subMenuAnimX }}
-                  className={`${subMenuPosClass} min-w-[200px] bg-[#1a1b1e]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl p-2 flex flex-col gap-1 ring-1 ring-black/50`}
+                  className={`${subMenuPosClass} min-w-[200px] bg-[#1a1b1e] border border-white/10 rounded-2xl shadow-2xl p-2 flex flex-col gap-1 ring-1 ring-black/50`}
                 >
                   <p className="px-3 py-1.5 text-[9px] uppercase tracking-widest text-neutral-600 font-black">选择目标行程</p>
                   {trips.length === 0 ? (

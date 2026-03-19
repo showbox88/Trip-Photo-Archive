@@ -4,7 +4,7 @@
 const DB_NAME = 'TripArchiveDB';
 const STORE_NAME = 'WorkspaceStore';
 const THUMB_STORE = 'ThumbnailStoreV2';
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 
 function openDB() {
   return new Promise((resolve, reject) => {
