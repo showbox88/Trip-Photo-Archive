@@ -5,10 +5,10 @@ dist-ssr
 .vscode
 .idea
 .DS_Store
-test-photos/*.png
-test-photos/*.jpg
-test-photos/*.jpeg
-test-photos/*.webp
-test-photos/*.heic
-test-photos/trip_database.json
+test-photos/**/*.png
+test-photos/**/*.jpg
+test-photos/**/*.jpeg
+test-photos/**/*.webp
+test-photos/**/*.heic
+test-photos/**/trip_database.json
 Test PIC/

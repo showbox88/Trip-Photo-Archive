@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import clsx from 'clsx';
 
-export function Sidebar({ dbContent, activeFilter, onFilterChange, photos = [] }) {
+export function Sidebar({ dbContent, activeFilter, onFilterChange, photos = [], t }) {
   const trips = dbContent.trips || [];
   const events = dbContent.events || [];
   
@@ -26,7 +26,7 @@ export function Sidebar({ dbContent, activeFilter, onFilterChange, photos = [] }
       )}
     >
       <div className="flex items-center gap-3">
-        <Icon size={18} className={clsx(isActive ? (label === "All Memories" || label === "Recent" || label === "Favorites" ? "text-blue-400" : colorClass) : colorClass)} />
+        <Icon size={18} className={clsx(isActive ? (label === t('sidebar.allMemories') || label === t('sidebar.recent') || label === t('sidebar.favorites') ? "text-blue-400" : colorClass) : colorClass)} />
         <span className="text-sm font-medium">{label}</span>
       </div>
       {count !== undefined && (
@@ -57,20 +57,20 @@ export function Sidebar({ dbContent, activeFilter, onFilterChange, photos = [] }
         <div className="space-y-1">
           <NavItem 
             icon={Image} 
-            label="All Memories" 
+            label={t('sidebar.allMemories')} 
             count={photos.length}
             isActive={activeFilter.type === 'all'}
             onClick={() => onFilterChange({ type: 'all' })}
           />
           <NavItem 
             icon={Clock} 
-            label="Recent" 
+            label={t('sidebar.recent')} 
             isActive={activeFilter.type === 'recent'}
             onClick={() => onFilterChange({ type: 'recent' })}
           />
           <NavItem 
             icon={Star} 
-            label="Favorites" 
+            label={t('sidebar.favorites')} 
             count={photos.filter(p => p.rating >= 9).length}
             isActive={activeFilter.type === 'favorites'}
             onClick={() => onFilterChange({ type: 'favorites' })}
@@ -79,11 +79,11 @@ export function Sidebar({ dbContent, activeFilter, onFilterChange, photos = [] }
 
         {/* Trips Section */}
         <div className="mt-8">
-          <SectionHeader label="Trips" />
+          <SectionHeader label={t('sidebar.trips')} />
           <div className="space-y-1 mt-2">
             {trips.length === 0 ? (
               <p className="px-3 py-4 text-xs text-neutral-600 italic leading-relaxed">
-                No trip archives yet. Click "New Trip" to start organizing.
+                {t('sidebar.noTrips')}
               </p>
             ) : (
               trips.map(trip => (
@@ -103,11 +103,11 @@ export function Sidebar({ dbContent, activeFilter, onFilterChange, photos = [] }
 
         {/* Independent Events Section */}
         <div className="mt-8">
-          <SectionHeader label="Independent Events" />
+          <SectionHeader label={t('sidebar.independentEvents')} />
           <div className="space-y-1 mt-2">
             {independentEvents.length === 0 ? (
               <p className="px-3 py-4 text-xs text-neutral-600 italic leading-relaxed">
-                Organize photos into events to see them here.
+                {t('sidebar.noEvents')}
               </p>
             ) : (
               independentEvents.map(event => (
@@ -131,7 +131,7 @@ export function Sidebar({ dbContent, activeFilter, onFilterChange, photos = [] }
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center p-1.5 shadow-lg">
              <Archive size={16} className="text-white" />
           </div>
-          <span className="text-xs font-bold tracking-tight text-white/40">v2.2 Archive Core</span>
+          <span className="text-xs font-bold tracking-tight text-white/40">v2.2 {t('sidebar.archiveCore')}</span>
         </div>
         <button className="p-2 hover:bg-white/5 rounded-full transition-colors">
           <Settings size={14} className="text-neutral-600" />

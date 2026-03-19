@@ -16,7 +16,7 @@ const PRESET_COLORS = [
   '#4ade80', // green-400
 ];
 
-export function PropertyManagerModal({ isOpen, onClose, metadata, onUpdate }) {
+export function PropertyManagerModal({ isOpen, onClose, metadata, onUpdate, t }) {
   const [activeTab, setActiveTab] = useState('categories'); // 'categories' | 'cities' | 'tags'
   const [newValue, setNewValue] = useState('');
   const [hoveredColorIdx, setHoveredColorIdx] = useState(null);
@@ -29,8 +29,9 @@ export function PropertyManagerModal({ isOpen, onClose, metadata, onUpdate }) {
     if (!newValue.trim()) return;
     if (currentList.some(item => item.name === newValue.trim())) return;
     
-    const randomColor = PRESET_COLORS[Math.floor(Math.random() * PRESET_COLORS.length)];
-    const newList = [...currentList, { name: newValue.trim(), color: randomColor }];
+    // Switch from random to sequential to ensure visual variety
+    const sequentialColor = PRESET_COLORS[currentList.length % PRESET_COLORS.length];
+    const newList = [...currentList, { name: newValue.trim(), color: sequentialColor }];
     onUpdate({ [activeTab]: newList });
     setNewValue('');
   };
@@ -48,10 +49,12 @@ export function PropertyManagerModal({ isOpen, onClose, metadata, onUpdate }) {
   };
 
   const tabs = [
-    { id: 'categories', label: '分类', icon: Tag, color: 'text-blue-400' },
-    { id: 'cities', label: '城市', icon: MapPin, color: 'text-emerald-400' },
-    { id: 'tags', label: '标签', icon: SlidersHorizontal, color: 'text-purple-400' },
+    { id: 'categories', label: t('app.propertyModal.tabCategories'), icon: Tag, color: 'text-blue-400' },
+    { id: 'cities', label: t('app.propertyModal.tabCities'), icon: MapPin, color: 'text-emerald-400' },
+    { id: 'tags', label: t('app.propertyModal.tabTags'), icon: SlidersHorizontal, color: 'text-purple-400' },
   ];
+
+  const activeTabLabel = tabs.find(tab => tab.id === activeTab)?.label || activeTab;
 
   return (
     <AnimatePresence>
@@ -77,8 +80,8 @@ export function PropertyManagerModal({ isOpen, onClose, metadata, onUpdate }) {
                 <SlidersHorizontal size={24} className="text-blue-400" />
               </div>
               <div>
-                <h2 className="text-2xl font-black text-white">属性编辑器</h2>
-                <p className="text-sm text-neutral-500 font-medium">管理您的全局分类、城市与自定义标签</p>
+                <h2 className="text-2xl font-black text-white">{t('app.propertyModal.title')}</h2>
+                <p className="text-sm text-neutral-500 font-medium">{t('app.propertyModal.subtitle')}</p>
               </div>
             </div>
             <button
@@ -119,7 +122,7 @@ export function PropertyManagerModal({ isOpen, onClose, metadata, onUpdate }) {
                     value={newValue}
                     onChange={(e) => setNewValue(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
-                    placeholder={`输入新的${tabs.find(t => t.id === activeTab).label}...`}
+                    placeholder={t('app.propertyModal.addPlaceholder').replace('{{tab}}', activeTabLabel)}
                     className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3 text-sm text-white placeholder-neutral-600 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-medium"
                   />
                 </div>
@@ -129,7 +132,7 @@ export function PropertyManagerModal({ isOpen, onClose, metadata, onUpdate }) {
                   className="px-6 py-3 bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-2xl text-sm font-black text-white hover:bg-blue-500 transition-all shadow-lg shadow-blue-600/20 flex items-center gap-2"
                 >
                   <Plus size={18} strokeWidth={3} />
-                  添加
+                  {t('app.propertyModal.addButton')}
                 </button>
               </div>
 
@@ -155,7 +158,7 @@ export function PropertyManagerModal({ isOpen, onClose, metadata, onUpdate }) {
                             }}
                             className="w-4 h-4 rounded-full shadow-lg ring-2 ring-white/10 hover:ring-white/30 transition-all shrink-0 active:scale-90"
                             style={{ backgroundColor: item.color }}
-                            title="点击切换颜色"
+                            title={t('app.propertyModal.clickToChangeColor')}
                           />
                         </div>
                         
@@ -165,7 +168,7 @@ export function PropertyManagerModal({ isOpen, onClose, metadata, onUpdate }) {
                       <button
                         onClick={() => handleRemove(item.name)}
                         className="opacity-0 group-hover:opacity-100 p-2 hover:bg-red-500/20 rounded-lg text-red-500 transition-all scale-90 group-hover:scale-100 shrink-0"
-                        title="删除"
+                        title={t('app.propertyModal.delete')}
                       >
                         <Trash2 size={16} />
                       </button>
@@ -173,7 +176,7 @@ export function PropertyManagerModal({ isOpen, onClose, metadata, onUpdate }) {
                   ))}
                   {currentList.length === 0 && (
                     <div className="flex flex-col items-center justify-center py-12 text-neutral-600 italic">
-                      <p className="text-sm">尚未添加任何{tabs.find(t => t.id === activeTab).label}</p>
+                      <p className="text-sm">{t('app.propertyModal.emptyState').replace('{{tab}}', activeTabLabel)}</p>
                     </div>
                   )}
                 </div>
@@ -187,7 +190,7 @@ export function PropertyManagerModal({ isOpen, onClose, metadata, onUpdate }) {
               onClick={onClose}
               className="px-8 py-3 bg-white/5 border border-white/10 rounded-2xl text-sm font-bold text-white hover:bg-white/10 transition-all active:scale-95"
             >
-              完成
+              {t('app.propertyModal.done')}
             </button>
           </div>
         </motion.div>

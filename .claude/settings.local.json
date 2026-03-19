@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(node -e \"require\\(''./node_modules/vite''\\)\")",
-      "Bash(npx vite build)"
+      "Bash(npx vite build)",
+      "Bash(npm install leaflet react-leaflet)",
+      "Bash(npm install leaflet react-leaflet --legacy-peer-deps)"
     ]
   }
 }
